@@ -6,23 +6,23 @@
 #' can change the values as they like prior to inputting the list into
 #' \code{bcgp}.
 #'
-#' @param xTrain An \code{n x d} matrix containing the independent variables
+#' @param x An \code{n x d} matrix containing the independent variables
 #' in the training set.
 #' @param noise If the data is assumed to be noise-free, then
 #' \code{noise} should be \code{FALSE}. Otherwise, it should be
-#' \code{TRUE},
+#' \code{TRUE}.
 #' @return A list containing the default values for all the prior parameters.
 #' @family preprocessing functions
 #' @seealso \code{\link{bcgp}}
 #' @section TODO: Decide whether to add options for "heteroscedastic" and "composite"
 #' @examples
-#' xTrain <- matrix(runif(40), ncol= 4, nrow = 10)
-#' createPriors(xTrain)
-#' createPriors(xTrain, noise = TRUE)
+#' x <- matrix(runif(40), ncol= 4, nrow = 10)
+#' createPriors(x)
+#' createPriors(x, noise = TRUE)
 #' @export
 
-createPriors  <- function(xTrain, noise = FALSE){
-  d <- ncol(xTrain)
+createPriors  <- function(x, noise = FALSE){
+  d <- ncol(x)
   priorList <- list(w = list(a = 0.5,
                              b = 1.0,
                              alpha = 1,

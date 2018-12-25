@@ -4,10 +4,10 @@
 \alias{createInits}
 \title{Create a list with initial values.}
 \usage{
-createInits(xTrain, priors = createPriors(xTrain), chains = 4)
+createInits(x, priors = createPriors(x), chains = 4)
 }
 \arguments{
-\item{xTrain}{An \code{n x d} matrix containing the independent variables
+\item{x}{An \code{n x d} matrix containing the independent variables
 in the training set.}
 
 \item{priors}{A list that contains the parameter values for the priors.}
@@ -33,9 +33,9 @@ inputting the list into \code{bcgp}.
 }
 
 \examples{
-xTrain <- matrix(runif(40), ncol= 4, nrow = 10)
-createInits(xTrain)
-createInits(xTrain, priors = createPriors(xTrain, noise = TRUE), chains = 2)
+x <- matrix(runif(40), ncol= 4, nrow = 10)
+createInits(x)
+createInits(x, priors = createPriors(x, noise = TRUE), chains = 2)
 }
 \seealso{
 \code{\link{bcgp}}

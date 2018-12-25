@@ -8,7 +8,7 @@
 #' for the Markov chains. The user can change the values as they like prior to
 #' inputting the list into \code{bcgp}.
 #'
-#' @param xTrain An \code{n x d} matrix containing the independent variables
+#' @param x An \code{n x d} matrix containing the independent variables
 #' in the training set.
 #' @param priors A list that contains the parameter values for the priors.
 #' @param chains The number of Markov chains. The default is 4.
@@ -18,13 +18,13 @@
 #' @seealso \code{\link{bcgp}}
 #' @section TODO: Decide whether to add options for "heteroscedastic" and "composite"
 #' @examples
-#' xTrain <- matrix(runif(40), ncol= 4, nrow = 10)
-#' createInits(xTrain)
-#' createInits(xTrain, priors = createPriors(xTrain, noise = TRUE), chains = 2)
+#' x <- matrix(runif(40), ncol= 4, nrow = 10)
+#' createInits(x)
+#' createInits(x, priors = createPriors(x, noise = TRUE), chains = 2)
 #' @export
 
-createInits  <- function(xTrain, priors = createPriors(xTrain), chains = 4){
+createInits  <- function(x, priors = createPriors(x), chains = 4){
   initList <- vector("list", length = chains)
-  initList <- lapply(initList, initFunc, priors = priors, xTrain = xTrain)
+  initList <- lapply(initList, initFunc, priors = priors, x = x)
   return(initList)
 }

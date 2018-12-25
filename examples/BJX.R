@@ -14,9 +14,12 @@ BJX <- function(x){
 
 xTrain <- matrix(c(seq(0, .4 + .4/11, by = .4/11), seq(0.5, 1, by = 0.5/3)), ncol = 1)
 yTrain <- BJX(xTrain)
-xPred <- matrix(c(xTrain, seq(min(xTrain), max(xTrain), 0.005)), ncol = 1)
-priors <- createPriors(xTrain)
-inits <- createInits(xTrain, priors)
+xPred <- matrix(sort(c(xTrain, seq(min(xTrain), max(xTrain), 0.005))), ncol = 1)
+priors <- createPriors(xTrain, noise = FALSE)
+inits <- createInits(xTrain, priors, chains = 1)
 
-fit <- bcgp(xTrain = xTrain, yTrain = yTrain)
+fit <- bcgp(x = xTrain, y = yTrain, priors = priors,
+            inits = inits, numUpdates = 3, numAdapt = 1000,
+            burnin = 1000, nmcmc = 5000, chains = 1, cores = 1,
+            noise = FALSE)
 

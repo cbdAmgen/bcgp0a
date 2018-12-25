@@ -4,15 +4,15 @@
 \alias{bcgp}
 \title{Draw samples from a bcgp model}
 \usage{
-bcgp(xTrain, yTrain, priors = "default", inits = "random",
+bcgp(x, y, priors = "default", inits = "random", noise = FALSE,
   numUpdates = 5, numAdapt = 1000, burnin = 1000, nmcmc = 10000,
-  chains = 4, cores = getOption("mc.cores", 1L), noise = FALSE)
+  chains = 4, cores = getOption("mc.cores", 1L))
 }
 \arguments{
-\item{xTrain}{An \code{n x d} matrix containing the independent variables
+\item{x}{An \code{n x d} matrix containing the independent variables
 in the training set.}
 
-\item{yTrain}{A vector containing the observed response values in the training
+\item{y}{A vector containing the observed response values in the training
 set.}
 
 \item{priors}{Can be either the string "default" or a list containing the values
@@ -42,6 +42,10 @@ Set initial values by providing a list equal in length to the number of Markov
 chains. A call to \code{createInits()} will assist in the correct creation of this list.
 }}
 
+\item{noise}{If the data is assumed to be noise-free, then
+\code{noise} should be \code{FALSE}. Otherwise, it should be
+\code{TRUE}.}
+
 \item{numUpdates}{The number of updates in the proposal stepsize adaptation phase.}
 
 \item{numAdapt}{The number of samples within each update in the proposal stepsize
@@ -52,7 +56,12 @@ adaptation phase is finished}
 
 \item{nmcmc}{The number of samples to be kept for each Markov chain.}
 
-\item{chains}{The number of Markov chains. The default is 4.}
+\item{chains}{A positive integer specifying the number of Markov chains.
+The default is 4.}
+
+\item{cores}{The number of cores to use when executing the Markov chains in
+parallel. The default is to use the value of the \code{mc.cores} option if it
+has been set and otherwise to default to 1 core.}
 }
 \value{
 An object of S4 class \code{bcgpfit} representing the fitted results.
@@ -66,10 +75,10 @@ Composite Gaussian Process (BCGP) model.
 }
 \examples{
 
-xTrain <- matrix(runif(20, 0, 10), nrow = 10, ncol = 2)
-yTrain <- xTrain[, 1] + sin(xTrain[, 2])
+x <- matrix(runif(20, 0, 10), nrow = 10, ncol = 2)
+y <- x[, 1] + sin(x[, 2])
 priors <- createPriors(noise = FALSE, d = 2)
-bcgp(xTrain, yTrain, priors)
+bcgp(x, y, priors)
 }
 \seealso{
 \code{\link{createPriors}} \code{\link{createInits}}

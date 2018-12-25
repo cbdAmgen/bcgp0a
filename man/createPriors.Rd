@@ -4,15 +4,15 @@
 \alias{createPriors}
 \title{Create a list with prior information.}
 \usage{
-createPriors(xTrain, noise = FALSE)
+createPriors(x, noise = FALSE)
 }
 \arguments{
-\item{xTrain}{An \code{n x d} matrix containing the independent variables
+\item{x}{An \code{n x d} matrix containing the independent variables
 in the training set.}
 
 \item{noise}{If the data is assumed to be noise-free, then
 \code{noise} should be \code{FALSE}. Otherwise, it should be
-\code{TRUE},}
+\code{TRUE}.}
 }
 \value{
 A list containing the default values for all the prior parameters.
@@ -30,9 +30,9 @@ can change the values as they like prior to inputting the list into
 }
 
 \examples{
-xTrain <- matrix(runif(40), ncol= 4, nrow = 10)
-createPriors(xTrain)
-createPriors(xTrain, noise = TRUE)
+x <- matrix(runif(40), ncol= 4, nrow = 10)
+createPriors(x)
+createPriors(x, noise = TRUE)
 }
 \seealso{
 \code{\link{bcgp}}

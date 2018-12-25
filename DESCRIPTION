@@ -9,7 +9,9 @@ Description: Implements fully Bayesian statistical inference and prediction usin
     Gaussian Processes. Hopefully, the user will have the ability to fit and predict
     with a stationary Gaussian Process (GP) model, a non-stationary GP model, a 
     stationary composite GP model, and a non-stationary composite GP model. No
-    guarantees on all those options.
+    guarantees on all those options. This will be a garbage translation from MATLAB
+    to R. Poorly documented, little error checking. Slow, written purely in R. I just
+    want to get something running.
 License: GPL (>=2)
 Encoding: UTF-8
 LazyData: true 
