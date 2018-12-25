@@ -77,7 +77,7 @@ Composite Gaussian Process (BCGP) model.
 
 x <- matrix(runif(20, 0, 10), nrow = 10, ncol = 2)
 y <- x[, 1] + sin(x[, 2])
-priors <- createPriors(noise = FALSE, d = 2)
+priors <- createPriors(x, noise = FALSE)
 bcgp(x, y, priors)
 }
 \seealso{

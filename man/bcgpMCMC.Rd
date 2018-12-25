@@ -4,7 +4,8 @@
 \alias{bcgpMCMC}
 \title{Draw samples from a bcgp model}
 \usage{
-bcgpMCMC(x, y, priors, inits, numUpdates, numAdapt, burnin, nmcmc)
+bcgpMCMC(x, y, priors, inits, numUpdates, numAdapt, burnin, nmcmc, chains,
+  cores)
 }
 \arguments{
 \item{x}{An \code{n x d} matrix containing the independent variables
@@ -23,14 +24,14 @@ adaptation phase is finished}
 
 \item{nmcmc}{The number of samples to be kept for each Markov chain.}
 
-\item{prior}{A list containing the values for the prior parameters.}
-
 \item{chains}{A positive integer specifying the number of Markov chains.
 The default is 4.}
 
 \item{cores}{The number of cores to use when executing the Markov chains in
 parallel. The default is to use the value of the \code{mc.cores} option if it
 has been set and otherwise to default to 1 core.}
+
+\item{prior}{A list containing the values for the prior parameters.}
 }
 \value{
 An object of S4 class \code{bcgp} representing the fitted results.

@@ -57,7 +57,7 @@
 #'
 #' x <- matrix(runif(20, 0, 10), nrow = 10, ncol = 2)
 #' y <- x[, 1] + sin(x[, 2])
-#' priors <- createPriors(noise = FALSE, d = 2)
+#' priors <- createPriors(x, noise = FALSE)
 #' bcgp(x, y, priors)
 #' @export
 
@@ -80,11 +80,11 @@ bcgp  <- function(x, y, priors = "default",
          'default' or try calling createPriors() for correct specification.")
   }
 
-  if(init == "random"){
+  if(inits == "random"){
     initList <- createInits(x, priors = priorList, chains = chains)
   }else if(is.list(priors)){
     ## FIX: Check to make sure the init list is in the correct form
-    initList <- init
+    initList <- inits
   }else{
     stop("Incorrect specification of initial parameter values. Either use
          'random' or try calling createInits() for correct specification.")
@@ -92,10 +92,10 @@ bcgp  <- function(x, y, priors = "default",
 
   yScaled <- scale(y, center = TRUE, scale = TRUE)
   xScaled <- apply(x, 2, rescale)
-
-  bcgpMCMC(x = xScaled, y = yScaled, priors = priorList, inits = initList)
+  return(list(x = xScaled, y = yScaled))
+  # bcgpMCMC(x = xScaled, y = yScaled, priors = priorList, inits = initList)
 
   # bfit <- new("bcgpfit",
   #             )
-  return(bfit)
+  # return(bfit)
 }
