@@ -91,7 +91,7 @@ bcgp  <- function(x, y, priors = "default",
   }
 
   yScaled <- scale(y, center = TRUE, scale = TRUE)
-  xScaled <- apply(x, 2, rescale)
+  xScaled <- scaleX(x)
   return(list(x = xScaled, y = yScaled))
   # bcgpMCMC(x = xScaled, y = yScaled, priors = priorList, inits = initList)
 
