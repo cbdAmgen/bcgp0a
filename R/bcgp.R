@@ -106,9 +106,12 @@ bcgp  <- function(x, y, priors = "default",
 
   yScaled <- scale(y, center = TRUE, scale = TRUE)
   xScaled <- scaleX(x)
-  return(list(x = xScaled, y = yScaled))
-  # bcgpMCMC(x = xScaled, y = yScaled, priors = priorList, inits = initList)
+  # return(list(x = xScaled, y = yScaled))
 
+  bfit <- bcgpMCMC(x = xScaled, y = yScaled, priors = priorList, inits = initList,
+                   numUpdates, numAdapt,
+                   burnin, nmcmc, chains = 1, cores = 1)
+  return(bfit)
   # bfit <- new("bcgpfit",
   #             )
   # return(bfit)

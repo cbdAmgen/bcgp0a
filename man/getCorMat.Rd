@@ -29,4 +29,7 @@ x <- matrix(runif(n * d), nrow = n, ncol = d)
 rho <- runif(d, 0, 1)
 getCorMat(x, rho)
 }
+\seealso{
+Other correlation and covariance functions: \code{\link{combineCorMats}}
+}
 \concept{correlation and covariance functions}

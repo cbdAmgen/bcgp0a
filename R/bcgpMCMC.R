@@ -31,13 +31,25 @@
 #' bcgp(x, y, priors)
 
 bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
-                      burnin, nmcmc, chains, cores){
+                      burnin, nmcmc, chains = 1, cores = 1){
 
 
+  iterations <- numUpdates*numAdapt + burnin + nmcmc
   epsV <- 1e-10
   tau2 <- 0.08
 
-  bfit <- new("bcgpfit",
-  )
+  G <- getCorMat(x, inits[[1]]$rhoG)
+  L <- getCorMat(x, inits[[1]]$rhoL)
+  R <- combineCorMats(inits[[1]]$w, G, L)
+
+  bfit <- list(G = G, L = L, R = R)
+  # GC = getGPredC(train.xt,rhoGC);
+  # LC = getGPredC(train.xt,rhoLC);
+  # RC = getRPred(wC,GC,LC);
+  # CC = getCPred(VC,RC,sig2epsC);
+  # KC = sig2KC * getGPredC(train.xt,rhoVC) + epsV*eye(size(CC,1));
+
+  # bfit <- new("bcgpfit",
+  # )
   return(bfit)
 }

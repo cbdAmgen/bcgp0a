@@ -23,19 +23,19 @@
 
 createPriors  <- function(x, noise = FALSE){
   d <- ncol(x)
-  priorList <- list(w = list(a = 0.5,
-                             b = 1.0,
+  priorList <- list(w = list(lower = 0.5,
+                             upper = 1.0,
                              alpha = 1,
                              beta = 1),
                     rhoG = list(alpha = rep(1, d),
                                 beta = rep(1, d)),
                     rhoL = list(alpha = rep(1, d),
                                 beta = rep(1, d)),
-                    muV = list(mu = -0.1,
+                    muV = list(betaV = -0.1,
                                sig2 = 0.1),
                     rhoV = list(alpha = rep(1, d),
                                 beta = rep(1, d)),
-                    sig2K = list(alpha = 2 + sqrt(0.1),
+                    sig2V = list(alpha = 2 + sqrt(0.1),
                                  beta = 100/(1+sqrt(1/10))))
 
   if(!noise){

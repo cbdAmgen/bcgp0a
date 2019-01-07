@@ -11,3 +11,12 @@ blah2 <- bcgp(x, y, priors = "default", inits = "random")
 blah3 <- bcgp(x, y, priors = priors, inits = "default")
 blah3 <- bcgp(x, y, priors = priors, inits = createInits(x))
 
+n <- 10
+d <- 2
+x <- matrix(runif(n * d), nrow = n, ncol = d)
+rhoG <- runif(d, 0, 1)
+rhoL <- runif(d, 0, rhoG)
+G <- getCorMat(x, rhoG)
+L <- getCorMat(x, rhoL)
+w <- runif(1, 0.5, 1)
+combineCorMats(w, G, L)
