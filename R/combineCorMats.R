@@ -29,13 +29,6 @@ combineCorMats <- function(w, G, L){
 
   # If I choose not to export this function, then I'll skip the error-checking
   # since the only time this function would be called is if everything is correct.
-  # stopifnot((0 <= w && w <= 1),
-  #           matrixcalc::is.positive.semi.definite(G, tol = 1e-10),
-  #           matrixcalc::is.positive.semi.definite(L, tol = 1e-10),
-  #           matrixcalc::is.symmetric.matrix(G),
-  #           matrixcalc::is.symmetric.matrix(L),
-  #           isTRUE(all(diag(G) == 1)),
-  #           isTRUE(all(diag(L) == 1)))
   stopifnot((0 <= w && w <= 1),
             checkValidCorMat(G),
             checkValidCorMat(L))

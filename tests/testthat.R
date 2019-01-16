@@ -1,4 +1,4 @@
 library(testthat)
-library(bcgp1)
+library(bcgp0a)
 
-test_check("bcgp1")
+test_check("bcgp0a")
