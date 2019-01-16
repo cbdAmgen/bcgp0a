@@ -70,39 +70,55 @@ bcgp  <- function(x, y, priors = "default",
                   chains = 4,
                   cores = getOption("mc.cores", 1L)){
 
+  # if(is.character(priors) && priors == "default"){
+  #   priorList <- createPriors(x, noise = noise)
+  # }
+  # if(is.list(priors)){
+  #   ## TODO: Check to make sure the prior list is in the correct form
+  #   priorList <- priors
+  # }
+  # if(!is.list(priors) && !(priors == "default")) {
+  #   stop("Incorrect specification of prior parameter values. Either use
+  #        'default' or try calling createPriors() for correct specification
+  #        before inputting your list.")
+  # }
+
   if(is.character(priors) && priors == "default"){
     priorList <- createPriors(x, noise = noise)
-  }
-  if(is.list(priors)){
+  }else if(is.list(priors)){
     ## TODO: Check to make sure the prior list is in the correct form
     priorList <- priors
-  }
-  if(!is.list(priors) && !(priors == "default")) {
+  }else{
     stop("Incorrect specification of prior parameter values. Either use
-         'default' or try calling createPriors() for correct specification.")
+         'default' or try calling createPriors() for correct specification
+         before inputting your list.")
   }
+
+
+
+  # if(is.character(inits) && inits == "random"){
+  #   initList <- createInits(x, priors = priorList, chains = chains)
+  # }
+  # if(is.list(inits)){
+  #   ## TODO: Check to make sure the inits list is in the correct form
+  #   initList <- inits
+  # }
+  # if(!is.list(inits) && !(inits == "random")) {
+  #   stop("Incorrect specification of initial parameter values. Either use
+  #        'random' or try calling createInits() for correct specification
+  #        before inputting your list.")
+  # }
 
   if(is.character(inits) && inits == "random"){
     initList <- createInits(x, priors = priorList, chains = chains)
-  }
-  if(is.list(inits)){
+  }else if(is.list(inits)){
     ## TODO: Check to make sure the inits list is in the correct form
     initList <- inits
-  }
-  if(!is.list(inits) && !(inits == "random")) {
+  }else{
     stop("Incorrect specification of initial parameter values. Either use
-         'random' or try calling createInits() for correct specification.")
+         'random' or try calling createInits() for correct specification
+         before inputting your list.")
   }
-
-  # if(inits == "random"){
-  #   initList <- createInits(x, priors = priorList, chains = chains)
-  # }else if(is.list(priors)){
-  #   ## FIX: Check to make sure the init list is in the correct form
-  #   initList <- inits
-  # }else{
-  #   stop("Incorrect specification of initial parameter values. Either use
-  #        'random' or try calling createInits() for correct specification.")
-  # }
 
   yScaled <- scale(y, center = TRUE, scale = TRUE)
   xScaled <- scaleX(x)

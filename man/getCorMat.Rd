@@ -7,9 +7,10 @@
 getCorMat(x, rho)
 }
 \arguments{
-\item{x}{An \emph{n x d} matrix.}
+\item{x}{An \emph{n x d} matrix, where \emph{d} is the dimension of the data.}
 
-\item{rho}{A vector of length d.}
+\item{rho}{A vector of length d. Each value in \code{rho} should be between
+0 and 1.}
 }
 \value{
 An \emph{n x n} correlation matrix
@@ -30,6 +31,7 @@ rho <- runif(d, 0, 1)
 getCorMat(x, rho)
 }
 \seealso{
-Other correlation and covariance functions: \code{\link{combineCorMats}}
+Other correlation and covariance functions: \code{\link{combineCorMats}},
+  \code{\link{getCovMat}}
 }
 \concept{correlation and covariance functions}

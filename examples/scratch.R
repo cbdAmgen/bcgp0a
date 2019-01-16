@@ -19,4 +19,15 @@ rhoL <- runif(d, 0, rhoG)
 G <- getCorMat(x, rhoG)
 L <- getCorMat(x, rhoL)
 w <- runif(1, 0.5, 1)
-combineCorMats(w, G, L)
+R <- combineCorMats(w, G, L)
+
+
+xTrain <- matrix(runif(20, 0, 10), nrow = 10, ncol = 2)
+yTrain <- xTrain[, 1] + sin(xTrain[, 2])
+priors <- createPriors(xTrain, noise = FALSE)
+inits <- createInits(xTrain, priors, chains = 1)
+
+fit <- bcgp(x = xTrain, y = yTrain, priors = priors,
+            inits = inits, numUpdates = 3, numAdapt = 1000,
+            burnin = 1000, nmcmc = 5000, chains = 1, cores = 1,
+            noise = FALSE)

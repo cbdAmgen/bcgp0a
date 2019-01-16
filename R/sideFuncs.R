@@ -19,3 +19,23 @@ initFunc <- function(initList, priors, x){
   return(initReturn)
 
 }
+
+checkValidCorMat <- function(x){
+
+  if(!is.matrix(x)) return(FALSE) # check that it's a matrix
+  if(!is.numeric(x)) return(FALSE) # check that it's numeric
+  if(!(nrow(x) == ncol(x))) return(FALSE) # check square
+  if(isFALSE(all(diag(x) == 1))) return(FALSE) # check 1's on diagonal
+  if(!(sum(x == t(x)) == (nrow(x)^2))) return(FALSE) # check symmetric
+
+  # check positive semi-definite
+  eigenvalues <- eigen(x, only.values = TRUE)$values
+  eigenvalues[abs(eigenvalues) < 1e-8] <- 0
+  if (any(eigenvalues < 0)) {
+    return(FALSE)
+  }
+  return(TRUE)
+
+}
+
+

@@ -41,8 +41,9 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
   G <- getCorMat(x, inits[[1]]$rhoG)
   L <- getCorMat(x, inits[[1]]$rhoL)
   R <- combineCorMats(inits[[1]]$w, G, L)
+  C <- getCovMat(inits[[1]]$V, R, inits[[1]]$sig2eps)
 
-  bfit <- list(G = G, L = L, R = R)
+  bfit <- list(G = G, L = L, R = R, C = C)
   # GC = getGPredC(train.xt,rhoGC);
   # LC = getGPredC(train.xt,rhoLC);
   # RC = getRPred(wC,GC,LC);

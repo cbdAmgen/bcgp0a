@@ -7,7 +7,8 @@
 combineCorMats(w, G, L)
 }
 \arguments{
-\item{w}{A scalar}
+\item{w}{A scalar between 0 and 1. In the \code{bcgp} setting, the user will have
+set a lower and upper bound (the default is to be between 0.5 and 1).}
 
 \item{G}{An \emph{n x n} correlation matrix, often the result of \code{\link{getCorMat}}}
 
@@ -21,7 +22,7 @@ An \emph{n x n} correlation matrix
 other correlation matrices.
 }
 \details{
-This creates a correlation matrix, \emph{R}, where \deqn{R = wG + (1-w)L}In
+This creates a correlation matrix, \emph{R}, where \deqn{R = wG + (1-w)L}. In
 the \code{bcgp} setting, \emph{G} is the global correlation matrix, \emph{L}
 is the local correlation matrix, and \emph{w} is the weight.
 }
@@ -37,6 +38,7 @@ w <- runif(1, 0.5, 1)
 combineCorMats(w, G, L)
 }
 \seealso{
-Other correlation and covariance functions: \code{\link{getCorMat}}
+Other correlation and covariance functions: \code{\link{getCorMat}},
+  \code{\link{getCovMat}}
 }
 \concept{correlation and covariance functions}
