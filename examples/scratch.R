@@ -33,7 +33,6 @@ fit <- bcgp(x = xTrain, y = yTrain, priors = priors,
             noise = FALSE)
 
 
-
 ################################ Check backsolve for substitute of finding inverse  ########################
 n <- 1000
 d <- 2
@@ -73,3 +72,7 @@ all.equal(m1(Sigma, y, mu), m2(Sigma, y, mu))
 microbenchmark::microbenchmark(m1(Sigma, y, mu),
                                m2(Sigma, y, mu),
                                times = 100)
+
+# logDet.R in ~/Documents/bcgp/bcgpr/R
+# mvrnormRcpp.cpp in ~/rcppPractice/
+

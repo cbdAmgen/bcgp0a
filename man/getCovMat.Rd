@@ -4,14 +4,15 @@
 \alias{getCovMat}
 \title{Create a covariance matrix.}
 \usage{
-getCovMat(V, R, sig2eps)
+getCovMat(V, R, sig2)
 }
 \arguments{
 \item{V}{A positive vector of length \emph{n}.}
 
 \item{R}{An \emph{n x n} correlation matrix.}
 
-\item{sig2eps}{A positive scalar representing the noise.}
+\item{sig2}{A positive scalar representing the variance of the noise
+(or nugget).}
 }
 \value{
 An \emph{n x n} covariance matrix
@@ -21,11 +22,11 @@ An \emph{n x n} covariance matrix
 }
 \details{
 This creates a covariance matrix, \emph{C}, where
-\deqn{C =  V^{0.5}RV^{0.5} + \sigma^2_\epsilon I}
+\deqn{C =  V^{0.5}RV^{0.5} + \sigma^2 I}
 where V is a matrix with variances on the diagonal. In the \code{bcgp}
 setting, \emph{R} is a correlation matrix resulting from
 \code{\link{combineCorMats}}, \emph{V} is a vector of process variances,
-and \emph{sig2eps} is the variance of the noise.
+and \emph{sig2} is the variance of the noise (or nugget).
 }
 \examples{
 n <- 10
@@ -33,9 +34,9 @@ d <- 2
 x <- matrix(runif(n * d), nrow = n, ncol = d)
 rho <- runif(d, 0, 1)
 R <- getCorMat(x, rho)
-sig2eps <- 0.01
+sig2 <- 0.01
 V <- rlnorm(n, -0.1, 0.1)
-getCovMat(V, R, sig2eps)
+getCovMat(V, R, sig2)
 }
 \seealso{
 Other correlation and covariance functions: \code{\link{combineCorMats}},
