@@ -31,3 +31,45 @@ fit <- bcgp(x = xTrain, y = yTrain, priors = priors,
             inits = inits, numUpdates = 3, numAdapt = 1000,
             burnin = 1000, nmcmc = 5000, chains = 1, cores = 1,
             noise = FALSE)
+
+
+
+################################ Check backsolve for substitute of finding inverse  ########################
+n <- 1000
+d <- 2
+x <- matrix(runif(n * d), nrow = n, ncol = d)
+rho <- runif(d, 0, 1)
+R <- getCorMat(x, rho)
+sig2 <- 0.01
+V <- rlnorm(n, -0.1, 0.1)
+Sigma <- getCovMat(V, R, sig2)
+
+mu <- 1
+y <- rnorm(nrow(Sigma), mu, 1)
+
+
+yMinusMu <- matrix( c(y - mu), ncol = 1)
+
+
+m1 <- function(Sigma, y, mu){
+
+  yMinusMu <- matrix( c(y - mu), ncol = 1)
+  logLike <- -0.5* t(yMinusMu) %*% solve(Sigma) %*% yMinusMu
+  return(logLike)
+
+}
+
+m2 <- function(Sigma, y, mu){
+
+  R <- chol(Sigma)
+  yMinusMu <- matrix( c(y - mu), ncol = 1)
+  logLike <- -0.5 * t(backsolve(R, yMinusMu, transpose = TRUE))  %*% forwardsolve(t(R), yMinusMu )
+  return(logLike)
+
+}
+
+all.equal(m1(Sigma, y, mu), m2(Sigma, y, mu))
+
+microbenchmark::microbenchmark(m1(Sigma, y, mu),
+                               m2(Sigma, y, mu),
+                               times = 100)
