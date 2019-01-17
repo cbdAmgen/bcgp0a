@@ -33,7 +33,7 @@
 bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
                       burnin, nmcmc, chains = 1, cores = 1){
 
-
+  nTrain <- nrow(x)
   iterations <- numUpdates*numAdapt + burnin + nmcmc
   epsV <- 1e-10
   tau2 <- 0.08
@@ -42,8 +42,9 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
   L <- getCorMat(x, inits[[1]]$rhoL)
   R <- combineCorMats(inits[[1]]$w, G, L)
   C <- getCovMat(inits[[1]]$V, R, inits[[1]]$sig2eps)
+  K <- inits[[1]]$sig2V * getCorMat(x, inits[[1]]$rhoV) + diag(epsV, nTrain)
 
-  bfit <- list(G = G, L = L, R = R, C = C)
+  bfit <- list(G = G, L = L, R = R, C = C, K = K)
   # GC = getGPredC(train.xt,rhoGC);
   # LC = getGPredC(train.xt,rhoLC);
   # RC = getRPred(wC,GC,LC);
