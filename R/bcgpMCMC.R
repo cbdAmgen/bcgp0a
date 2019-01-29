@@ -31,27 +31,89 @@
 #' bcgp(x, y, priors)
 
 bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
-                      burnin, nmcmc, chains = 1, cores = 1){
+                      burnin, nmcmc, chains = 4, cores = 1){
 
   nTrain <- nrow(x)
+  d <- ncol(x)
   iterations <- numUpdates*numAdapt + burnin + nmcmc
   epsV <- 1e-10
   tau2 <- 0.08
 
-  G <- getCorMat(x, inits[[1]]$rhoG)
-  L <- getCorMat(x, inits[[1]]$rhoL)
-  R <- combineCorMats(inits[[1]]$w, G, L)
-  C <- getCovMat(inits[[1]]$V, R, inits[[1]]$sig2eps)
-  K <- inits[[1]]$sig2V * getCorMat(x, inits[[1]]$rhoV) + diag(epsV, nTrain)
+  samples <- vector("list", chains)
+  warmup <- vector("list", chains)
+  acceptances <- vector("list", chains)
 
-  bfit <- list(G = G, L = L, R = R, C = C, K = K)
-  # GC = getGPredC(train.xt,rhoGC);
-  # LC = getGPredC(train.xt,rhoLC);
-  # RC = getRPred(wC,GC,LC);
-  # CC = getCPred(VC,RC,sig2epsC);
-  # KC = sig2KC * getGPredC(train.xt,rhoVC) + epsV*eye(size(CC,1));
+  ## TODO: Currently not parallelized. Need to make that happen
+  for(i in 1:chains){
 
-  # bfit <- new("bcgpfit",
-  # )
+    G <- getCorMat(x, inits[[i]]$rhoG)
+    L <- getCorMat(x, inits[[i]]$rhoL)
+    R <- combineCorMats(inits[[i]]$w, G, L)
+    C <- getCovMat(inits[[i]]$V, R, inits[[i]]$sig2eps)
+    K <- inits[[i]]$sig2V * getCorMat(x, inits[[i]]$rhoV) + diag(epsV, nTrain)
+
+    ## TODO: right now I'm keeping all draws in a single matrix with column names
+    ## Should I have each parameter group in its own separate matrix? Either way,
+    ## at the end, they'll be put into a named list
+
+    ## Side note, working with matrices will be faster than working with
+    ## data frames or lists
+    allDraws <- matrix(NA, nrow = iterations, ncol = 5 + 3*d + nTrain)
+    row1 <- unlist(inits[[i]])
+    colnames(allDraws) <- names(row1)
+    allDraws[1, ] <- row1
+
+    allAcceptances <- matrix(0, nrow = iterations, ncol = 5 + 3*d + nTrain)
+    colnames(allAcceptances) <- names(row1)
+    allAcceptances[1, ] <- 1
+
+    rm(row1)
+
+    ## TODO: This is where the work goes
+    for(j in 1:iterations){
+      allDraws[j, ] <- runif(ncol(allDraws), 0, 1)
+      allAcceptances[j, ] <- sample.int(2, size = ncol(allDraws), replace = TRUE) - 1
+    }
+
+
+    warmup[[i]] <- as.list(data.frame(allDraws[1:(numUpdates*numAdapt + burnin), ]))
+    samples[[i]] <- as.list(data.frame(allDraws[(iterations - nmcmc + 1):iterations, ]))
+    acceptances[[i]] <- as.list(
+      data.frame(allAcceptances[(iterations - nmcmc + 1):iterations, ]))
+
+  }
+
+
+  sim <- list(samples = samples,
+              warmup = warmup,
+              acceptances = acceptances,
+              chains = chains,
+              numUpdates = numUpdates,
+              numAdapt = numAdapt,
+              burnin = burnin,
+              nmcmc = nmcmc)
+
+  bfit <- new("bcgpfit",
+              model_pars = c("beta0", "w", "rhoG", "rhoL", "sig2eps", "sig2Y",
+                             "muV", "rhoV", "sig2V"),
+              par_dims = list(beta0 = 1,
+                              w = 1,
+                              rhoG = d,
+                              rhoL = d,
+                              sig2eps = 1,
+                              sig2Y = nTrain,
+                              muV = 1,
+                              rhoV = d,
+                              sig2V = 1),
+              sim = sim,
+              priors = priors,
+              inits = inits,
+              args = list(chains = chains,
+                          numUpdates = numUpdates,
+                          numAdapt = numAdapt,
+                          burnin = burnin,
+                          nmcmc = nmcmc),
+              algorithm = "M-H and Gibbs")
+
   return(bfit)
 }

@@ -70,19 +70,6 @@ bcgp  <- function(x, y, priors = "default",
                   chains = 4,
                   cores = getOption("mc.cores", 1L)){
 
-  # if(is.character(priors) && priors == "default"){
-  #   priorList <- createPriors(x, noise = noise)
-  # }
-  # if(is.list(priors)){
-  #   ## TODO: Check to make sure the prior list is in the correct form
-  #   priorList <- priors
-  # }
-  # if(!is.list(priors) && !(priors == "default")) {
-  #   stop("Incorrect specification of prior parameter values. Either use
-  #        'default' or try calling createPriors() for correct specification
-  #        before inputting your list.")
-  # }
-
   if(is.character(priors) && priors == "default"){
     priorList <- createPriors(x, noise = noise)
   }else if(is.list(priors)){
@@ -93,21 +80,6 @@ bcgp  <- function(x, y, priors = "default",
          'default' or try calling createPriors() for correct specification
          before inputting your list.")
   }
-
-
-
-  # if(is.character(inits) && inits == "random"){
-  #   initList <- createInits(x, priors = priorList, chains = chains)
-  # }
-  # if(is.list(inits)){
-  #   ## TODO: Check to make sure the inits list is in the correct form
-  #   initList <- inits
-  # }
-  # if(!is.list(inits) && !(inits == "random")) {
-  #   stop("Incorrect specification of initial parameter values. Either use
-  #        'random' or try calling createInits() for correct specification
-  #        before inputting your list.")
-  # }
 
   if(is.character(inits) && inits == "random"){
     initList <- createInits(x, priors = priorList, chains = chains)
@@ -122,13 +94,11 @@ bcgp  <- function(x, y, priors = "default",
 
   yScaled <- scale(y, center = TRUE, scale = TRUE)
   xScaled <- scaleX(x)
-  # return(list(x = xScaled, y = yScaled))
+
 
   bfit <- bcgpMCMC(x = xScaled, y = yScaled, priors = priorList, inits = initList,
                    numUpdates, numAdapt,
-                   burnin, nmcmc, chains = 1, cores = 1)
+                   burnin, nmcmc, chains = chains, cores = 1)
   return(bfit)
-  # bfit <- new("bcgpfit",
-  #             )
-  # return(bfit)
+
 }

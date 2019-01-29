@@ -43,8 +43,8 @@ listFunc <- function(x){
 
 
 
-d <- 50
-n <- 1000
+d <- 3
+n <- 10
 dMat <- 5 + 3*d
 
 rhoNames <- rep("rho", d)

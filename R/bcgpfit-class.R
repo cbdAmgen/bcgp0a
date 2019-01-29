@@ -13,7 +13,10 @@
 ##' @section TODO: Decide whether to put in \code{prototype} and \code{validity}
 ##' arguments.
 setClass("bcgpfit",
-         slots = c(sim = "list",
+         slots = c(model_pars = "character",
+                   par_dims = "list",
+                   sim = "list",
                    priors = "list",
                    inits = "list",
+                   args = "list",
                    algorithm = "character"))
