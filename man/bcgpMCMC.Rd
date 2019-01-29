@@ -5,7 +5,7 @@
 \title{Draw samples from a bcgp model}
 \usage{
 bcgpMCMC(x, y, priors, inits, numUpdates, numAdapt, burnin, nmcmc,
-  chains = 1, cores = 1)
+  chains = 4, cores = 1)
 }
 \arguments{
 \item{x}{An \code{n x d} matrix containing the independent variables

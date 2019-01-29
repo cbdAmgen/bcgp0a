@@ -39,6 +39,12 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
   epsV <- 1e-10
   tau2 <- 0.08
 
+  rhoNames <- rep("rho", d)
+  rhoGNames <- paste0(rhoNames, paste0("G", 1:d))
+  rhoLNames <- paste0(rhoNames, paste0("L", 1:d))
+  rhoVNames <- paste0(rhoNames, paste0("V", 1:d))
+  rm(rhoNames)
+
   samples <- vector("list", chains)
   warmup <- vector("list", chains)
   acceptances <- vector("list", chains)
@@ -46,18 +52,13 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
   ## TODO: Currently not parallelized. Need to make that happen
   for(i in 1:chains){
 
-    G <- getCorMat(x, inits[[i]]$rhoG)
-    L <- getCorMat(x, inits[[i]]$rhoL)
-    R <- combineCorMats(inits[[i]]$w, G, L)
-    C <- getCovMat(inits[[i]]$V, R, inits[[i]]$sig2eps)
-    K <- inits[[i]]$sig2V * getCorMat(x, inits[[i]]$rhoV) + diag(epsV, nTrain)
-
     ## TODO: right now I'm keeping all draws in a single matrix with column names
     ## Should I have each parameter group in its own separate matrix? Either way,
     ## at the end, they'll be put into a named list
 
     ## Side note, working with matrices will be faster than working with
     ## data frames or lists
+
     allDraws <- matrix(NA, nrow = iterations, ncol = 5 + 3*d + nTrain)
     row1 <- unlist(inits[[i]])
     colnames(allDraws) <- names(row1)
@@ -69,8 +70,17 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
 
     rm(row1)
 
+    G <- getCorMat(x, inits[[i]]$rhoG)
+    L <- getCorMat(x, inits[[i]]$rhoL)
+    R <- combineCorMats(inits[[i]]$w, G, L)
+    C <- getCovMat(inits[[i]]$V, R, inits[[i]]$sig2eps)
+    K <- inits[[i]]$sig2V * getCorMat(x, inits[[i]]$rhoV) + diag(epsV, nTrain)
+
+    propWidths <- c(0.4, rep(0.07, d), rep(0.03, d), 1e-3, rep(0.25, d))
+    names(propWidths) <- c("w", rhoGNames, rhoLNames, "sig2eps", rhoVNames)
+
     ## TODO: This is where the work goes
-    for(j in 1:iterations){
+    for(j in 2:iterations){
       allDraws[j, ] <- runif(ncol(allDraws), 0, 1)
       allAcceptances[j, ] <- sample.int(2, size = ncol(allDraws), replace = TRUE) - 1
     }
