@@ -19,4 +19,5 @@ setClass("bcgpfit",
                    priors = "list",
                    inits = "list",
                    args = "list",
-                   algorithm = "character"))
+                   algorithm = "character",
+                   scale = "matrix"))

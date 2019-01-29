@@ -99,6 +99,8 @@ bcgp  <- function(x, y, priors = "default",
   bfit <- bcgpMCMC(x = xScaled, y = yScaled, priors = priorList, inits = initList,
                    numUpdates, numAdapt,
                    burnin, nmcmc, chains = chains, cores = 1)
+
+  slot(bfit, "scale") <- xScaled
   return(bfit)
 
 }
