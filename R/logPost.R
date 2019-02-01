@@ -1,9 +1,9 @@
 #' Calculate the log posterior density.
 #'
-#' \code{logPost} returns the log of the posterior density.
+#' \code{logPost} returns the log of the posterior density up to a constant.
 #'
 #' This calculates the log of the posterior density in the \code{bcgp}
-#' setting.
+#' setting up to a constant.
 #'
 #' @param x An \code{n x d} matrix containing the independent variables
 #' in the training set.
