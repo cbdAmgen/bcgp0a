@@ -81,8 +81,12 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
 
     ## TODO: This is where the work goes
     for(j in 2:iterations){
-      allDraws[j, ] <- runif(ncol(allDraws), 0, 1)
-      allAcceptances[j, ] <- sample.int(2, size = ncol(allDraws), replace = TRUE) - 1
+
+
+
+
+      # allDraws[j, ] <- runif(ncol(allDraws), 0, 1)
+      # allAcceptances[j, ] <- sample.int(2, size = ncol(allDraws), replace = TRUE) - 1
     }
 
 
