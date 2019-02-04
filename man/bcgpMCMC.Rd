@@ -45,10 +45,18 @@ Composite Gaussian Process (BCGP) model.
 }
 \examples{
 
-x <- matrix(runif(20, 0, 10), nrow = 10, ncol = 2)
+x <- matrix(runif(20, 0, 1), nrow = 10, ncol = 2)
 y <- x[, 1] + sin(x[, 2])
 priors <- createPriors(x, noise = FALSE)
-bcgp(x, y, priors)
+inits <- createInits(x, priors, chains = 4)
+numUpdates <- 3
+numAdapt <- 500
+burnin <- 500
+nmcmc <- 5000
+chains <- 4
+cores <- 1
+bcgpMCMC(x, y, priors, inits, numUpdates, numAdapt,
+         burnin, nmcmc, chains, cores)
 }
 \seealso{
 Other Major functions: \code{\link{bcgp}}
