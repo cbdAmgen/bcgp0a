@@ -19,6 +19,6 @@ priors <- createPriors(xTrain, noise = FALSE)
 inits <- createInits(xTrain, priors, chains = 1)
 
 fit <- bcgp(x = xTrain, y = yTrain, priors = priors,
-            inits = inits, numUpdates = 3, numAdapt = 1000,
-            burnin = 1000, nmcmc = 5000, chains = 1, cores = 1,
+            inits = inits, numUpdates = 10, numAdapt = 500,
+            burnin = 100, nmcmc = 1000, chains = 1, cores = 1,
             noise = FALSE)

@@ -24,7 +24,7 @@ logDet <- function(C){
   if(is.matrix(a)){
     logDeterminant <- 2 * sum(log(diag(a)))
   }else{
-    a <- determinant(C)
+    a <- determinant(C, logarithm = TRUE)
     logDeterminant <- as.numeric(a$modulus * a$sign)
   }
   return(logDeterminant)

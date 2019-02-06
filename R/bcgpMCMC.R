@@ -46,6 +46,7 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
   iterations <- numUpdates*numAdapt + burnin + nmcmc
   epsV <- 1e-10
   tau2 <- 0.08
+  priorVec <- unlist(priors)
 
   rhoNames <- rep("rho", d)
   rhoGNames <- paste0(rhoNames, paste0("G", 1:d))
@@ -58,7 +59,7 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
   acceptances <- vector("list", chains)
 
   ## TODO: Currently not parallelized. Need to make that happen
-  for(i in 1:chains){
+  for(i in seq_len(chains)){
 
     ## TODO: right now I'm keeping all draws in a single matrix with column names
     ## Should I have each parameter group in its own separate matrix? Either way,
@@ -71,6 +72,10 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
     row1 <- unlist(inits[[i]])
     colnames(allDraws) <- names(row1)
     allDraws[1, ] <- row1
+    if(d == 1){
+      colnames(allDraws)[startsWith(colnames(allDraws), "rho")] <-
+        paste0(colnames(allDraws)[startsWith(colnames(allDraws), "rho")],"1")
+    }
 
     allAcceptances <- matrix(0, nrow = iterations, ncol = 5 + 3*d + nTrain)
     colnames(allAcceptances) <- names(row1)
@@ -86,6 +91,9 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
 
     propWidths <- c(0.4, rep(0.07, d), rep(0.03, d), 1e-3, rep(0.25, d))
     names(propWidths) <- c("w", rhoGNames, rhoLNames, "sig2eps", rhoVNames)
+    calAccept <- rep(0, length(propWidths)) # container for acceptances
+                                            # during prop width calibration
+    names(calAccept) <- names(propWidths)
 
     ## TODO: This is where the work goes
     for(j in 2:iterations){
@@ -101,18 +109,59 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
       allDraws[j, ] = allDraws[j - 1, ]
 
       ## get a sample for beta0. Gibbs step
-      RC <- chol(C)
-      tmpC <- forwardsolve(t(RC), rep(1, nTrain))
-      tmpC2 <- forwardsolve(t(RC), y)
-      oneCinvone <- sum(tmpC^2)
-      oneCinvY <- sum(tmpC * tmpC2)
-      allDraws[j, "beta0"] <- rnorm(1, oneCinvY/oneCinvone, sqrt(1/oneCinvone))
-      allAcceptances[j, "beta0"] <- 1
-      rm(tmpC, tmpC2)
+      cholCR <- try(chol(C), silent = TRUE)
+      if(is.matrix(cholCR)){
+        tmpC <- forwardsolve(t(cholCR), rep(1, nTrain))
+        tmpC2 <- forwardsolve(t(cholCR), y)
+        oneCinvone <- sum(tmpC^2)
+        oneCinvY <- sum(tmpC * tmpC2)
+        allDraws[j, "beta0"] <- rnorm(1, oneCinvY/oneCinvone, sqrt(1/oneCinvone))
+        allAcceptances[j, "beta0"] <- 1
+        rm(tmpC, tmpC2)
+      }else{
+        stop("The covariance matrix is ill-conditioned. Possible solutions (not
+             necessarily good solutions) are to use less data or to set the priors
+             for 'sig2eps' in such a way that 'sig2eps' will be larger.")
+      }
 
+      ## Propose for w, accept or reject in Metropolis step
+      wP <- allDraws[j, "w"] + runif(1, -propWidths["w"], propWidths["w"])
+      if(wP < priors$w$lower || wP > priors$w$upper){
+        accept <- FALSE
+      }else{
+        RP <- combineCorMats(wP, G, L)
+        CP <- getCovMat(allDraws[j, startsWith(colnames(allDraws), "V")],
+                        RP, allDraws[j, "sig2eps"])
+        paramsP <- allDraws[j, ]
+        paramsP["w"] <- wP
+        accept <- acceptProposal(logCurr = logPost(x, y, params = allDraws[j, ],
+                                                   priorVec, C, K),
+                                 logProp = logPost(x, y, params = paramsP,
+                                                   priorVec, CP, K))
 
-      allDraws[j, -1] <- runif(ncol(allDraws) - 1, 0, 1)
-      allAcceptances[j, -1] <- sample.int(2, size = ncol(allDraws) - 1, replace = TRUE) - 1
+        if(accept){
+          allDraws[j, "w"] <- wP
+          R <- RP
+          C <- CP
+          allAcceptances[j, "beta0"] <- 1
+          calAccept["w"] <- calAccept["w"] + 1
+        }
+      }
+
+      ## TODO: Turn the below few lines into a function
+      ## e.g. adaptPropWidth <- function(calAcceptVec, parameter){}
+      ## or, possibly, at the end of the adaptation iteration,
+      ## adapt all proposal widths together
+      if(j %% numAdapt == 0 && j < (numUpdates*numAdapt + 1)){
+        acceptRate <- calAccept["w"]/numAdapt
+        # cat(sprintf('The most recent acceptance rate for w is %.3f \n', acceptRate))
+        # cat(sprintf('The old proposal width for w is %.7f \n',propWidths["w"]))
+        if(acceptRate >.40 || acceptRate < .25){
+          propWidths["w"] <- propWidths["w"]*acceptRate/0.33
+        }
+        # cat(sprintf('The new proposal width for w is %.7f \n \n',propWidths["w"]))
+        calAccept["w"] <- 0
+      }
     }
 
 
