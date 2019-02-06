@@ -64,7 +64,7 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
     ## Should I have each parameter group in its own separate matrix? Either way,
     ## at the end, they'll be put into a named list
 
-    ## Side note, working with matrices will be faster than working with
+    ## Side note: working with matrices will be faster than working with
     ## data frames or lists
 
     allDraws <- matrix(NA, nrow = iterations, ncol = 5 + 3*d + nTrain)
@@ -78,11 +78,11 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
 
     rm(row1)
 
-    G <- getCorMat(x, inits[[i]]$rhoG)
-    L <- getCorMat(x, inits[[i]]$rhoL)
-    R <- combineCorMats(inits[[i]]$w, G, L)
-    C <- getCovMat(inits[[i]]$V, R, inits[[i]]$sig2eps)
-    K <- inits[[i]]$sig2V * getCorMat(x, inits[[i]]$rhoV) + diag(epsV, nTrain)
+    # G <- getCorMat(x, inits[[i]]$rhoG)
+    # L <- getCorMat(x, inits[[i]]$rhoL)
+    # R <- combineCorMats(inits[[i]]$w, G, L)
+    # C <- getCovMat(inits[[i]]$V, R, inits[[i]]$sig2eps)
+    # K <- inits[[i]]$sig2V * getCorMat(x, inits[[i]]$rhoV) + diag(epsV, nTrain)
 
     propWidths <- c(0.4, rep(0.07, d), rep(0.03, d), 1e-3, rep(0.25, d))
     names(propWidths) <- c("w", rhoGNames, rhoLNames, "sig2eps", rhoVNames)
@@ -90,11 +90,29 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
     ## TODO: This is where the work goes
     for(j in 2:iterations){
 
+      G <- getCorMat(x, allDraws[j - 1, rhoGNames])
+      L <- getCorMat(x, allDraws[j - 1, rhoLNames])
+      R <- combineCorMats(allDraws[j - 1, "w"], G, L)
+      C <- getCovMat(allDraws[j - 1, startsWith(colnames(allDraws), "V")], R,
+                     allDraws[j - 1, "sig2eps"])
+      K <- allDraws[j - 1, "sig2V"] * getCorMat(x, allDraws[j - 1, rhoVNames]) +
+        diag(epsV, nTrain)
+
+      allDraws[j, ] = allDraws[j - 1, ]
+
+      ## get a sample for beta0. Gibbs step
+      RC <- chol(C)
+      tmpC <- forwardsolve(t(RC), rep(1, nTrain))
+      tmpC2 <- forwardsolve(t(RC), y)
+      oneCinvone <- sum(tmpC^2)
+      oneCinvY <- sum(tmpC * tmpC2)
+      allDraws[j, "beta0"] <- rnorm(1, oneCinvY/oneCinvone, sqrt(1/oneCinvone))
+      allAcceptances[j, "beta0"] <- 1
+      rm(tmpC, tmpC2)
 
 
-
-      # allDraws[j, ] <- runif(ncol(allDraws), 0, 1)
-      # allAcceptances[j, ] <- sample.int(2, size = ncol(allDraws), replace = TRUE) - 1
+      allDraws[j, -1] <- runif(ncol(allDraws) - 1, 0, 1)
+      allAcceptances[j, -1] <- sample.int(2, size = ncol(allDraws) - 1, replace = TRUE) - 1
     }
 
 
