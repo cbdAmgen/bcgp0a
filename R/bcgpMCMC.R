@@ -138,14 +138,14 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
                                                    priorVec, C, K),
                                  logProp = logPost(x, y, params = paramsP,
                                                    priorVec, CP, K))
+      }
 
-        if(accept){
-          allDraws[j, "w"] <- wP
-          R <- RP
-          C <- CP
-          allAcceptances[j, "beta0"] <- 1
-          calAccept["w"] <- calAccept["w"] + 1
-        }
+      if(accept){
+        allDraws[j, "w"] <- wP
+        R <- RP
+        C <- CP
+        allAcceptances[j, "w"] <- 1
+        calAccept["w"] <- calAccept["w"] + 1
       }
 
       ## TODO: Turn the below few lines into a function
