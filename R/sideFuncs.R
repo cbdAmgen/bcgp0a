@@ -8,7 +8,7 @@ initFunc <- function(initList, priors, x){
     (priors$w$upper - priors$w$lower)
   initReturn$rhoG <- rbeta(d, priors$rhoG$alpha, priors$rhoG$beta)
   initReturn$rhoL <- initReturn$rhoG * rbeta(d, priors$rhoL$alpha, priors$rhoL$beta)
-  initReturn$sig2eps <- max(.Machine$double.eps,
+  initReturn$sig2eps <- max(2* .Machine$double.eps,
                             rgamma(1, shape = priors$sig2eps$alpha,
                                    scale = priors$sig2eps$beta))
   initReturn$muV <- rnorm(1, priors$muV$betaV, sqrt(priors$muV$sig2))

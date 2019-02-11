@@ -47,7 +47,7 @@ logPost <- function(x, y, params, priors, C, K){
   V <- params[startsWith(paramNames, "V")]
 
   logVMinusMuV <- log(V) - params["muV"]
-  RK <- chol(K)
+  RK <- try(chol(K), silent = TRUE)
   tmpK <- forwardsolve(t(RK), logVMinusMuV)
 
   rhoGAlpha <- priors[startsWith(priorNames, "rhoG.alpha")]
@@ -61,6 +61,8 @@ logPost <- function(x, y, params, priors, C, K){
                                              #   0.5 * t(yMinusMu) %*% solve(C) %*% yMinusMu
                                              # This is the fastest way I've found
 
+  ## TODO: Check this and make sure the part for V is right.
+  ## Have I gotten the Jacobian right? Check line 73
   prior <- (priors["w.alpha"] - 1) * log(params["w"] - priors["w.lower"]) +
     (priors["w.beta"] - 1) * log(priors["w.upper"] - params["w"]) +
     sum((rhoLAlpha - 1) * log(rhoL)) + sum((rhoLBeta - 1) * log(rhoG - rhoL)) +
@@ -68,7 +70,7 @@ logPost <- function(x, y, params, priors, C, K){
     sum((rhoGBeta - 1) * log(1 - rhoG)) +
     (priors["sig2eps.alpha"] - 1) * log(params["sig2eps"]) -
     params["sig2eps"]/priors["sig2eps.beta"] -
-    0.5 * logDet(K) - 0.5 * sum(tmpK^2) -
+    0.5 * logDet(K) - 0.5 * sum(tmpK^2) - sum(log(V)) -
     1/(2*priors["muV.sig2"]) * (params["muV"] - priors["muV.betaV"])^2 +
     sum((rhoVAlpha - 1) * log(rhoV)) + sum((rhoVBeta - 1) * log(1 - rhoV)) -
     (priors["sig2V.alpha"] + 1) * log(params["sig2V"]) -

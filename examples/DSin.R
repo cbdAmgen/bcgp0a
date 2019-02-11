@@ -17,8 +17,9 @@ yTrain <- DSin(xTrain)
 xPred <- matrix(sort(c(xTrain, seq(min(xTrain), max(xTrain), 0.005))), ncol = 1)
 priors <- createPriors(xTrain, noise = FALSE)
 inits <- createInits(xTrain, priors, chains = 1)
+chains <- 1
 
 fit <- bcgp(x = xTrain, y = yTrain, priors = priors,
-            inits = inits, numUpdates = 10, numAdapt = 500,
-            burnin = 100, nmcmc = 1000, chains = 1, cores = 1,
+            inits = inits, numUpdates = 2, numAdapt = 500,
+            burnin = 100, nmcmc = 1000, chains = chains, cores = 1,
             noise = FALSE)
