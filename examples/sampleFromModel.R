@@ -11,7 +11,6 @@ muV <- -0.1
 sig2V <- 0.01
 rhoV <- 0.99
 xTrain <- matrix(seq(0, 1, length.out = n), ncol = 1)
-noise <- FALSE
 
 G <- getCorMat(xTrain, rhoG)
 L <- getCorMat(xTrain, rhoL)
@@ -27,13 +26,10 @@ plot(xTrain, yTrain, type = 'l')
 chains <- 1
 
 
-priors <- createPriors(xTrain, noise = noise)
+priors <- createPriors(xTrain, noise = FALSE)
 inits <- createInits(xTrain, priors, chains = chains)
 
 fit <- bcgp(x = xTrain, y = yTrain, priors = priors,
             inits = inits, numUpdates = 5, numAdapt = 500,
             burnin = 100, nmcmc = 2000, chains = chains, cores = 1,
-            noise = noise)
-
-lapply(fit@sim$samples[[1]], mean)
-plot(xTrain, colMeans(fit@sim$samples[[1]]$V), type = 'l')
+            noise = FALSE)
