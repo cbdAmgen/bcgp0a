@@ -25,7 +25,8 @@ logDet <- function(C){
     logDeterminant <- 2 * sum(log(diag(a)))
   }else{
     a <- determinant(C, logarithm = TRUE)
-    logDeterminant <- as.numeric(a$modulus * a$sign)
+    # logDeterminant <- as.numeric(a$modulus * a$sign)
+    logDeterminant <- as.numeric(a$modulus)
   }
   return(logDeterminant)
 }
