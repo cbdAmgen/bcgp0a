@@ -44,7 +44,7 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
   nTrain <- nrow(x)
   d <- ncol(x)
   iterations <- numUpdates*numAdapt + burnin + nmcmc
-  epsV <- 1e-6
+  epsV <- 1e-10
   tau2 <- 0.08
   priorVec <- unlist(priors)
   distMat <- as.matrix(dist(xTrain, method = "euclidean", diag = TRUE, upper = TRUE))
@@ -267,16 +267,17 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
         newAlpha <- priorVec["sig2V.alpha"] + nTrain/2
         newBeta <- 1/(0.5 * WMinusMuVRtinvWMinusMuV + 1/priorVec["sig2V.beta"])
         allDraws[j, "sig2V"] <- 1/rgamma(1, shape = newAlpha, scale = newBeta)
+        # if(allDraws[j, "sig2V"] > 0.4) browser()
         allAcceptances[j, "sig2V"] <- 1
         K <- allDraws[j, "sig2V"] * getCorMat(x, allDraws[j, rhoVNames]) +
           diag(epsV, nTrain)
 
         rm(tmpRt, tmpRt2)
-        }else{
-          stop("The covariance matrix for the variance process is ill-conditioned.
+      }else{
+        stop("The covariance matrix for the variance process is ill-conditioned.
                A possible solution (not necessarily a good solution) is to use less
                data.")
-        }
+      }
 
       ## Propose for rhoV, accept or reject in Metropolis step
       for(k in 1:d){
