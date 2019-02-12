@@ -162,3 +162,32 @@ sum(rep(1, nTrain) * (Cinv %*% y))
 sum(rep(1, nTrain) * qr.solve(C, rep(1, nTrain)))
 sum(rep(1, nTrain) * qr.solve(C, y))
 
+rm(list = ls())
+cat("\014")
+
+n <- 1500
+beta0 <- 0
+w <- 0.65
+rhoG <- 0.5
+rhoL <- 0.25
+sig2eps <- 0
+muV <- -0.1
+sig2V <- 0.01
+rhoV <- 0.09
+xTrain <- matrix(seq(0, 1, length.out = n), ncol = 1)
+noise <- FALSE
+
+G <- getCorMat(xTrain, rhoG)
+L <- getCorMat(xTrain, rhoL)
+R <- combineCorMats(w, G, L)
+K <- sig2V*getCorMat(xTrain, rhoV) + diag(1e-10, length(xTrain))
+# V <- exp(MASS::mvrnorm(1, rep(muV, length(xTrain)), K))
+V <- rep(1, length(xTrain))
+C <- getCovMat(V, R, sig2eps)
+
+determinant(C)
+det(C)
+exp(determinant(C)$modulus)
+logDet(C)
+
+yTrain <- MASS::mvrnorm(1, rep(beta0, length(xTrain)), C)
