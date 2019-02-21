@@ -35,7 +35,7 @@ getCovMat <- function(V, R, sig2){
             (sig2 >= 0))
 
   rootV <- sqrt(V)
-  C <- t(t(rootV*R) * rootV) + diag(sig2, length(V))
+  C <- t(rootV*R) * rootV + diag(sig2, length(V))
   return(C)
 
   # NOTE: Surprisingly, this method is substantially faster, even for relatively large
