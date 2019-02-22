@@ -13,7 +13,7 @@ DSin <- function(x){
 }
 
 xTrain <- matrix(seq(0, 3, length.out = 15), ncol = 1)
-yTrain <- DSin(xTrain) + rnorm(length(xTrain), 0, 0.02)
+yTrain <- DSin(xTrain) + rnorm(length(xTrain), 0, 0.00)
 xPred <- matrix(sort(c(xTrain, seq(min(xTrain), max(xTrain), 0.005))), ncol = 1)
 
 noise <- FALSE
@@ -21,10 +21,12 @@ priors <- createPriors(xTrain, noise = noise)
 inits <- createInits(xTrain, priors, chains = 1)
 chains <- 1
 
+system.time({
 fit <- bcgp(x = xTrain, y = yTrain, priors = priors,
             inits = inits, numUpdates = 3, numAdapt = 1000,
-            burnin = 1000, nmcmc = 5000, chains <- 1, cores = 1,
+            burnin = 1000, nmcmc = 2000, chains = 1, cores = 1,
             noise = noise)
+})
 
 lapply(fit@sim$samples[[1]], mean)
 plot(xTrain, colMeans(fit@sim$samples[[1]]$V), type = 'l')

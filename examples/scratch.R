@@ -34,7 +34,7 @@ fit <- bcgp(x = xTrain, y = yTrain, priors = priors,
 
 
 ################################ Check backsolve for substitute of finding inverse  ########################
-n <- 1000
+n <- 20
 d <- 2
 x <- matrix(runif(n * d), nrow = n, ncol = d)
 rho <- runif(d, 0, 1)
@@ -50,27 +50,37 @@ y <- rnorm(nrow(Sigma), mu, 1)
 yMinusMu <- matrix( c(y - mu), ncol = 1)
 
 
-m1 <- function(Sigma, y, mu){
+m1 <- function(Sigma, yMinusMu){
 
-  yMinusMu <- matrix( c(y - mu), ncol = 1)
+  # yMinusMu <- matrix( c(y - mu), ncol = 1)
   logLike <- -0.5* t(yMinusMu) %*% solve(Sigma) %*% yMinusMu
   return(logLike)
 
 }
 
-m2 <- function(Sigma, y, mu){
+m2 <- function(Sigma, yMinusMu){
 
   R <- chol(Sigma)
-  yMinusMu <- matrix( c(y - mu), ncol = 1)
+  # yMinusMu <- matrix( c(y - mu), ncol = 1)
   logLike <- -0.5 * t(backsolve(R, yMinusMu, transpose = TRUE))  %*% forwardsolve(t(R), yMinusMu )
   return(logLike)
 
 }
 
-all.equal(m1(Sigma, y, mu), m2(Sigma, y, mu))
+m3 <- function(Sigma, yMinusMu){
+
+  R <- chol(Sigma)
+  # yMinusMu <- matrix( c(y - mu), ncol = 1)
+  tmp <- forwardsolve(t(R), yMinusMu )
+  logLike <- -0.5 * sum(tmp^2)
+  return(logLike)
+
+}
+all.equal(m1(Sigma, yMinusMu), m2(Sigma, yMinusMu), m3(Sigma, yMinusMu))
 
 microbenchmark::microbenchmark(m1(Sigma, y, mu),
                                m2(Sigma, y, mu),
+                               m3(Sigma, y, mu),
                                times = 100)
 
 # logDet.R in ~/Documents/bcgp/bcgpr/R

@@ -30,9 +30,9 @@ getCovMat <- function(V, R, sig2){
 
   # If I choose not to export this function, then I'll skip the error-checking
   # since the only time this function would be called is if everything is correct.
-  stopifnot(all(V > 0),
-            checkValidCorMat(R),
-            (sig2 >= 0))
+  # stopifnot(all(V > 0),
+  #           checkValidCorMat(R),
+  #           (sig2 >= 0))
 
   rootV <- sqrt(V)
   C <- t(rootV*R) * rootV + diag(sig2, length(V))
@@ -43,7 +43,7 @@ getCovMat <- function(V, R, sig2){
   # Matrix package.
 
   # Sparse matrix multiplication was orders of magnitude slower for small matrices
-  # than the method immplemented above or for diag(V)^0.5 %*% R %*% diag(V)^0.5, which
+  # than the method implemented above or for diag(V)^0.5 %*% R %*% diag(V)^0.5, which
   # was roughly the same speed as above for small matrices, but much slower for large
   # matrices.
 

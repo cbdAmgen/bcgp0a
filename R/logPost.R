@@ -48,7 +48,22 @@ logPost <- function(x, y, params, priors, C, K){
 
   logVMinusMuV <- log(V) - params["muV"]
   RK <- try(chol(K), silent = TRUE)
-  tmpK <- forwardsolve(t(RK), logVMinusMuV)
+  if(is.matrix(RK)){
+    tmpK <- forwardsolve(t(RK), logVMinusMuV)
+    tmpK2 <- sum(tmpK^2)
+  }else{
+    # tmpK2 <- try(as.numeric(t(logVMinusMuV) %*% try(solve(K, logVMinusMuV))))
+    KinvlogVMinusMuV <- try(solve(K, logVMinusMuV), silent = TRUE)
+    if(is.numeric(KinvlogVMinusMuV)){
+      tmpK2 <- sum(logVMinusMuV * KinvlogVMinusMuV)
+    }else{
+      R <- svd(K)
+      tmpK2 <- t(logVMinusMuV) %*% R$v %*% diag(1/R$d) %*% t(R$u) %*% logVMinusMuV
+      # warning("The covariance matrix for the variance process is ill-conditioned.
+      #         A possible solution (not necessarily a good solution) is to use less
+      #         data.")
+    }
+  }
 
   rhoGAlpha <- priors[startsWith(priorNames, "rhoG.alpha")]
   rhoGBeta <- priors[startsWith(priorNames, "rhoG.beta")]
@@ -58,8 +73,8 @@ logPost <- function(x, y, params, priors, C, K){
   rhoVBeta <- priors[startsWith(priorNames, "rhoV.beta")]
 
   like <- -0.5*logDet(C) - 0.5 * sum(tmpC^2) # = -.5*logDet(C) -
-                                             #   0.5 * t(yMinusMu) %*% solve(C) %*% yMinusMu
-                                             # This is the fastest way I've found
+  #   0.5 * t(yMinusMu) %*% solve(C) %*% yMinusMu
+  # This is the fastest way I've found
 
   ## TODO: Check this and make sure the part for V is right.
   ## Have I gotten the Jacobian right? Check line 73
@@ -70,7 +85,7 @@ logPost <- function(x, y, params, priors, C, K){
     sum((rhoGBeta - 1) * log(1 - rhoG)) +
     (priors["sig2eps.alpha"] - 1) * log(params["sig2eps"]) -
     params["sig2eps"]/priors["sig2eps.beta"] -
-    0.5 * logDet(K) - 0.5 * sum(tmpK^2) - sum(log(V)) -
+    0.5 * logDet(K) - 0.5 * tmpK2 - sum(log(V)) -
     1/(2*priors["muV.sig2"]) * (params["muV"] - priors["muV.betaV"])^2 +
     sum((rhoVAlpha - 1) * log(rhoV)) + sum((rhoVBeta - 1) * log(1 - rhoV)) -
     (priors["sig2V.alpha"] + 1) * log(params["sig2V"]) -

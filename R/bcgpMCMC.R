@@ -138,6 +138,8 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
                                                    priorVec, C, K),
                                  logProp = logPost(x, y, params = paramsP,
                                                    priorVec, CP, K))
+
+
       }
 
       if(accept){
@@ -196,6 +198,7 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
                                                      priorVec, C, K),
                                    logProp = logPost(x, y, params = paramsP,
                                                      priorVec, CP, K))
+
         }
 
         if(accept){
@@ -227,6 +230,7 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
                                                      priorVec, C, K),
                                    logProp = logPost(x, y, params = paramsP,
                                                      priorVec, CP, K))
+
         }
 
         if(accept){
@@ -267,7 +271,6 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
         newAlpha <- priorVec["sig2V.alpha"] + nTrain/2
         newBeta <- 1/(0.5 * WMinusMuVRtinvWMinusMuV + 1/priorVec["sig2V.beta"])
         allDraws[j, "sig2V"] <- 1/rgamma(1, shape = newAlpha, scale = newBeta)
-        # if(allDraws[j, "sig2V"] > 0.4) browser()
         allAcceptances[j, "sig2V"] <- 1
         K <- allDraws[j, "sig2V"] * getCorMat(x, allDraws[j, rhoVNames]) +
           diag(epsV, nTrain)
@@ -300,6 +303,7 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
                                                      priorVec, C, K),
                                    logProp = logPost(x, y, params = paramsP,
                                                      priorVec, CP, K))
+
         }
 
         if(accept){
@@ -355,6 +359,7 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
                                                    priorVec, CP, K),
                                  logCurrToProp = -sum(log(VP)),
                                  logPropToCurr = -sum(log(allDraws[j, startsWith(colnames(allDraws), "V")])))
+
 
         if(accept){
           allDraws[j, startsWith(colnames(allDraws), "V")] <- VP
