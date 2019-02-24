@@ -58,6 +58,9 @@ logPost <- function(x, y, params, priors, C, K){
       tmpK2 <- sum(logVMinusMuV * KinvlogVMinusMuV)
     }else{
       R <- svd(K)
+      # TODO: Fix the below line to speed it up. Similar to getCovMat()
+      # UPDATE: I checked, and this is slightly faster than
+      # sum(colSums(c(logVMinusMuV) * R$v) * colSums(c(logVMinusMuV) * R$u)/R$d)
       tmpK2 <- t(logVMinusMuV) %*% R$v %*% diag(1/R$d) %*% t(R$u) %*% logVMinusMuV
       # warning("The covariance matrix for the variance process is ill-conditioned.
       #         A possible solution (not necessarily a good solution) is to use less
