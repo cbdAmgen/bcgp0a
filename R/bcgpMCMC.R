@@ -47,7 +47,6 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
   epsV <- 1e-10
   tau2 <- 0.08
   priorVec <- unlist(priors)
-  distMat <- as.matrix(dist(xTrain, method = "euclidean", diag = TRUE, upper = TRUE))
 
   rhoNames <- rep("rho", d)
   rhoGNames <- paste0(rhoNames, paste0("G", 1:d))
@@ -58,6 +57,11 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
   samples <- vector("list", chains)
   warmup <- vector("list", chains)
   acceptances <- vector("list", chains)
+
+  if(nTrain >= 20){
+    nProp <- 10 # number of training locations to sample near the focal point for V proposals
+    m <- ceiling(nTrain/nProp) + 1 # Number of times to cycle through for V proposals
+  }
 
   ## TODO: Currently not parallelized. Need to make that happen
   for(i in seq_len(chains)){
@@ -328,7 +332,54 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
 
       ## Sample for sig2(x) (V)
       if(nTrain >= 20){ # GET VALUES FOR SIG2X FOR "howManyClose" LOCATIONS AT A TIME
+        for(k in seq_len(m)){
 
+          focalPoint <- runif(d, 0, 1)
+          distMat <- as.matrix(dist(rbind(focalPoint, x),
+                                    method = "euclidean",
+                                    diag = FALSE, upper = FALSE))[, 1]
+          idxIn <- sort(order(distMat[-1])[1:nProp])
+          trainIn <- as.matrix(x[idxIn, ])
+          trainOut <- as.matrix(x[-idxIn, ])
+
+          allTrain <- rbind(trainIn, trainOut)
+
+          VC <- allDraws[j, startsWith(colnames(allDraws), "V")][idxIn]
+          propMeanWIn <- log(VC[idxIn])
+
+          KW <- tau2 * getCorMat(allTrain, allDraws[j, rhoVNames]) + diag(epsV, nTrain)
+
+          KWIn <- KW[seq_len(nProp), seq_len(nProp)]
+          KWOut <- KW[-seq_len(nProp), -seq_len(nProp)]
+          KWBetween <- KW[-seq_len(nProp), seq_len(nProp)]
+
+          RKWOut <- try(chol(KWOut), silent = TRUE)
+          if(is.matrix(RKWOut)){
+            halfVar <- forwardsolve(t(RKWOut), KWBetween)
+            propVar <- KWIn - t(halfVar) %*% halfVar
+          }else{
+            propVar <- KWIn - t(KWBetween) %*% solve(KWOut, KWBetween)
+          }
+
+          # VP <- VC
+          # VP[idxIn] <- exp(MASS::mvrnorm(1, propMeanWIn, propVar))
+
+          # VP <- exp(MASS::mvrnorm(1, log(allDraws[j, startsWith(colnames(allDraws), "V")]),
+          #                         KW))
+          # CP <- getCovMat(VP, R, allDraws[j, "sig2eps"])
+          # paramsP <- allDraws[j, ]
+          # paramsP[startsWith(colnames(allDraws), "V")] <- VP
+
+          # KIdxW = tau2*(RIdxW - RBetweenW'/(RNoIdxW + epsV*eye(size(RNoIdxW,1)))*RBetweenW) + epsV*eye(sum(idx~=0));
+          # wIdx = randnorm(1,muIdxW',[],KIdxW);
+          # vIdx = exp(wIdx);
+          # VP = VC;
+          # VP(idx~=0) = vIdx;
+          #
+          # RC = getRPred(wC,GC,LC);
+          # CP = getCPred(VP,RC,sig2epsC);
+
+        }
       }else{ # GET VALUES FOR SIG2X FOR THE ENTIRE VECTOR AT THE SAME TIME
         KW <- tau2 * getCorMat(x, allDraws[j, rhoVNames]) + diag(epsV, nTrain)
         VP <- exp(MASS::mvrnorm(1, log(allDraws[j, startsWith(colnames(allDraws), "V")]),
@@ -399,7 +450,7 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
       # end
       #
       # KIdxW = tau2*(RIdxW - RBetweenW'/(RNoIdxW + epsV*eye(size(RNoIdxW,1)))*RBetweenW) + epsV*eye(sum(idx~=0));
-      #               wIdx = randnorm(1,muIdxW',[],KIdxW);
+      # wIdx = randnorm(1,muIdxW',[],KIdxW);
       # vIdx = exp(wIdx);
       # VP = VC;
       # VP(idx~=0) = vIdx;

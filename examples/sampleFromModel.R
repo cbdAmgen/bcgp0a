@@ -1,7 +1,7 @@
 rm(list = ls())
 cat("\014")
 
-n <- 15
+n <- 27
 beta0 <- 0
 w <- 0.65
 rhoG <- 0.6

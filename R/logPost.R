@@ -35,7 +35,26 @@
 logPost <- function(x, y, params, priors, C, K){
 
   yMinusMu <- y - params["beta0"]
-  RC <- chol(C)
+  RC <- try(chol(C), silent = TRUE)
+  if(is.matrix(RC)){
+    tmpC <- forwardsolve(t(RC), yMinusMu)
+    tmpC2 <- sum(tmpC^2)
+  }else{
+    CinvYMinusMu <- try(solve(C, yMinusMu), silent = TRUE)
+    if(is.numeric(CinvYMinusMu)){
+      tmpC2 <- sum(yMinusMu * CinvYMinusMu)
+    }else{
+      R <- svd(C)
+      # TODO: Fix the below line to speed it up. Similar to getCovMat()
+      # UPDATE: I checked, and this is slightly faster than
+      # sum(colSums(c(logVMinusMuV) * R$v) * colSums(c(logVMinusMuV) * R$u)/R$d)
+      tmpC2 <- t(yMinusMu) %*% R$v %*% diag(1/R$d) %*% t(R$u) %*% yMinusMu
+      # warning("The covariance matrix for the variance process is ill-conditioned.
+      #         A possible solution (not necessarily a good solution) is to use less
+      #         data.")
+    }
+  }
+
   tmpC <- forwardsolve(t(RC), yMinusMu )
 
   paramNames <- names(params)
