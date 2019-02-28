@@ -29,9 +29,9 @@ combineCorMats <- function(w, G, L){
 
   # If I choose not to export this function, then I'll skip the error-checking
   # since the only time this function would be called is if everything is correct.
-  stopifnot((0 <= w && w <= 1),
-            checkValidCorMat(G),
-            checkValidCorMat(L))
+  # stopifnot((0 <= w && w <= 1),
+  #           checkValidCorMat(G),
+  #           checkValidCorMat(L))
 
   R <- w*G + (1 - w)*L
   return(R)

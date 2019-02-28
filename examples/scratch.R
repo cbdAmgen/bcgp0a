@@ -34,7 +34,7 @@ fit <- bcgp(x = xTrain, y = yTrain, priors = priors,
 
 
 ################################ Check backsolve for substitute of finding inverse  ########################
-n <- 1000
+n <- 20
 d <- 2
 x <- matrix(runif(n * d), nrow = n, ncol = d)
 rho <- runif(d, 0, 1)
@@ -50,27 +50,37 @@ y <- rnorm(nrow(Sigma), mu, 1)
 yMinusMu <- matrix( c(y - mu), ncol = 1)
 
 
-m1 <- function(Sigma, y, mu){
+m1 <- function(Sigma, yMinusMu){
 
-  yMinusMu <- matrix( c(y - mu), ncol = 1)
+  # yMinusMu <- matrix( c(y - mu), ncol = 1)
   logLike <- -0.5* t(yMinusMu) %*% solve(Sigma) %*% yMinusMu
   return(logLike)
 
 }
 
-m2 <- function(Sigma, y, mu){
+m2 <- function(Sigma, yMinusMu){
 
   R <- chol(Sigma)
-  yMinusMu <- matrix( c(y - mu), ncol = 1)
+  # yMinusMu <- matrix( c(y - mu), ncol = 1)
   logLike <- -0.5 * t(backsolve(R, yMinusMu, transpose = TRUE))  %*% forwardsolve(t(R), yMinusMu )
   return(logLike)
 
 }
 
-all.equal(m1(Sigma, y, mu), m2(Sigma, y, mu))
+m3 <- function(Sigma, yMinusMu){
+
+  R <- chol(Sigma)
+  # yMinusMu <- matrix( c(y - mu), ncol = 1)
+  tmp <- forwardsolve(t(R), yMinusMu )
+  logLike <- -0.5 * sum(tmp^2)
+  return(logLike)
+
+}
+all.equal(m1(Sigma, yMinusMu), m2(Sigma, yMinusMu), m3(Sigma, yMinusMu))
 
 microbenchmark::microbenchmark(m1(Sigma, y, mu),
                                m2(Sigma, y, mu),
+                               m3(Sigma, y, mu),
                                times = 100)
 
 # logDet.R in ~/Documents/bcgp/bcgpr/R
@@ -162,3 +172,32 @@ sum(rep(1, nTrain) * (Cinv %*% y))
 sum(rep(1, nTrain) * qr.solve(C, rep(1, nTrain)))
 sum(rep(1, nTrain) * qr.solve(C, y))
 
+rm(list = ls())
+cat("\014")
+
+n <- 1500
+beta0 <- 0
+w <- 0.65
+rhoG <- 0.5
+rhoL <- 0.25
+sig2eps <- 0
+muV <- -0.1
+sig2V <- 0.01
+rhoV <- 0.09
+xTrain <- matrix(seq(0, 1, length.out = n), ncol = 1)
+noise <- FALSE
+
+G <- getCorMat(xTrain, rhoG)
+L <- getCorMat(xTrain, rhoL)
+R <- combineCorMats(w, G, L)
+K <- sig2V*getCorMat(xTrain, rhoV) + diag(1e-10, length(xTrain))
+# V <- exp(MASS::mvrnorm(1, rep(muV, length(xTrain)), K))
+V <- rep(1, length(xTrain))
+C <- getCovMat(V, R, sig2eps)
+
+determinant(C)
+det(C)
+exp(determinant(C)$modulus)
+logDet(C)
+
+yTrain <- MASS::mvrnorm(1, rep(beta0, length(xTrain)), C)
