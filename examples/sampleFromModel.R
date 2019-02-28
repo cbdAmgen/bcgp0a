@@ -34,3 +34,7 @@ fit <- bcgp(x = xTrain, y = yTrain, priors = priors,
             inits = inits, numUpdates = 5, numAdapt = 500,
             burnin = 100, nmcmc = 2000, chains = chains, cores = 1,
             noise = noise)
+
+
+lapply(fit@sim$samples[[1]], mean)
+plot(xTrain, colMeans(fit@sim$samples[[1]]$V), type = 'l')

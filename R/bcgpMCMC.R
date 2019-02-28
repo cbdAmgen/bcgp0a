@@ -332,6 +332,7 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
 
       ## Sample for sig2(x) (V)
       if(nTrain >= 20){ # GET VALUES FOR SIG2X FOR "howManyClose" LOCATIONS AT A TIME
+        VC <- allDraws[j, startsWith(colnames(allDraws), "V")]
         for(k in seq_len(m)){
 
           focalPoint <- runif(d, 0, 1)
@@ -344,8 +345,8 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
 
           allTrain <- rbind(trainIn, trainOut)
 
-          VC <- allDraws[j, startsWith(colnames(allDraws), "V")][idxIn]
-          propMeanWIn <- log(VC[idxIn])
+          VCIn <- VC[idxIn]
+          propMeanWIn <- log(VCIn)
 
           KW <- tau2 * getCorMat(allTrain, allDraws[j, rhoVNames]) + diag(epsV, nTrain)
 
@@ -361,25 +362,32 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
             propVar <- KWIn - t(KWBetween) %*% solve(KWOut, KWBetween)
           }
 
-          # VP <- VC
-          # VP[idxIn] <- exp(MASS::mvrnorm(1, propMeanWIn, propVar))
+          VP <- allDraws[j, startsWith(colnames(allDraws), "V")]
+          VP[idxIn] <- exp(MASS::mvrnorm(1, propMeanWIn, propVar))
 
-          # VP <- exp(MASS::mvrnorm(1, log(allDraws[j, startsWith(colnames(allDraws), "V")]),
-          #                         KW))
-          # CP <- getCovMat(VP, R, allDraws[j, "sig2eps"])
-          # paramsP <- allDraws[j, ]
-          # paramsP[startsWith(colnames(allDraws), "V")] <- VP
+          CP <- getCovMat(VP, R, allDraws[j, "sig2eps"])
+          paramsP <- allDraws[j, ]
+          paramsP[startsWith(colnames(allDraws), "V")] <- VP
 
-          # KIdxW = tau2*(RIdxW - RBetweenW'/(RNoIdxW + epsV*eye(size(RNoIdxW,1)))*RBetweenW) + epsV*eye(sum(idx~=0));
-          # wIdx = randnorm(1,muIdxW',[],KIdxW);
-          # vIdx = exp(wIdx);
-          # VP = VC;
-          # VP(idx~=0) = vIdx;
-          #
-          # RC = getRPred(wC,GC,LC);
-          # CP = getCPred(VP,RC,sig2epsC);
+          accept <- acceptProposal(logCurr = logPost(x, y, params = allDraws[j, ],
+                                                     priorVec, C, K),
+                                   logProp = logPost(x, y, params = paramsP,
+                                                     priorVec, CP, K),
+                                   logCurrToProp = -sum(log(VP)),
+                                   logPropToCurr = -sum(log(allDraws[j, startsWith(colnames(allDraws), "V")])))
+
+          if(accept){
+            allDraws[j, startsWith(colnames(allDraws), "V")] <- VP
+            C <- CP
+          }
 
         }
+
+        allAcceptances[j, startsWith(colnames(allDraws), "V")] <-
+          (allDraws[j, startsWith(colnames(allDraws), "V")] != VC)
+
+
+
       }else{ # GET VALUES FOR SIG2X FOR THE ENTIRE VECTOR AT THE SAME TIME
         KW <- tau2 * getCorMat(x, allDraws[j, rhoVNames]) + diag(epsV, nTrain)
         VP <- exp(MASS::mvrnorm(1, log(allDraws[j, startsWith(colnames(allDraws), "V")]),
