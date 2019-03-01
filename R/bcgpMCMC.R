@@ -87,17 +87,12 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
 
     rm(row1)
 
-    # G <- getCorMat(x, inits[[i]]$rhoG)
-    # L <- getCorMat(x, inits[[i]]$rhoL)
-    # R <- combineCorMats(inits[[i]]$w, G, L)
-    # C <- getCovMat(inits[[i]]$V, R, inits[[i]]$sig2eps)
-    # K <- inits[[i]]$sig2V * getCorMat(x, inits[[i]]$rhoV) + diag(epsV, nTrain)
-
     propWidths <- c(0.4, rep(0.07, d), rep(0.03, d), 1e-3, rep(0.25, d))
     names(propWidths) <- c("w", rhoGNames, rhoLNames, "sig2eps", rhoVNames)
     calAccept <- rep(0, length(propWidths)) # container for acceptances
                                             # during prop width calibration
     names(calAccept) <- names(propWidths)
+    onesNTrain <- rep(1, nTrain)
 
     for(j in 2:iterations){
 
@@ -119,14 +114,33 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
         tmpC2 <- forwardsolve(t(cholCR), y)
         oneCinvone <- sum(tmpC^2)
         oneCinvY <- sum(tmpC * tmpC2)
-        allDraws[j, "beta0"] <- rnorm(1, oneCinvY/oneCinvone, sqrt(1/oneCinvone))
-        allAcceptances[j, "beta0"] <- 1
-        rm(tmpC, tmpC2)
       }else{
-        stop("The covariance matrix is ill-conditioned. Possible solutions (not
-             necessarily good solutions) are to use less data or to set the priors
-             for 'sig2eps' in such a way that 'sig2eps' will be larger.")
+        Cinvone <- try(solve(C, onesNTrain), silent = TRUE)
+        if(is.numeric(Cinvone)){
+          oneCinvone <- sum(onesNTrain * Cinvone)
+        }else{
+          svdC <- svd(C)
+          oneCinvone <- t(onesNTrain) %*% svdC$v %*% diag(1/svdC$d) %*%
+            t(svdC$u) %*% onesNTrain
+        }
+        CinvY <- try(solve(C, y), silent = TRUE)
+        if(is.numeric(CinvY)){
+          oneCinvY <- sum(onesNTrain * CinvY)
+        }else{
+          svdC <- svd(C)
+          oneCinvY <- t(onesNTrain) %*% svdC$v %*% diag(1/svdC$d) %*%
+            t(svdC$u) %*% y
+        }
       }
+
+      allDraws[j, "beta0"] <- rnorm(1, oneCinvY/oneCinvone, sqrt(1/oneCinvone))
+      allAcceptances[j, "beta0"] <- 1
+
+
+      #   stop("The covariance matrix is ill-conditioned. Possible solutions (not
+      #        necessarily good solutions) are to use less data or to set the priors
+      #        for 'sig2eps' in such a way that 'sig2eps' will be larger.")
+      # }
 
       ## Propose for w, accept or reject in Metropolis step
       wP <- allDraws[j, "w"] + runif(1, -propWidths["w"], propWidths["w"])
@@ -253,38 +267,67 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
       Rt <- getCorMat(x, allDraws[j, rhoVNames]) + diag(epsV, nTrain)
       cholRtR <- try(chol(Rt), silent = TRUE)
       if(is.matrix(cholRtR)){
-        tmpRt <- forwardsolve(t(cholRtR), rep(1, nTrain))
-        tmpRt2 <- forwardsolve(t(cholRtR),
-                               log(allDraws[j, startsWith(colnames(allDraws), "V")]))
+        W <- log(allDraws[j, startsWith(colnames(allDraws), "V")])
+        tmpRt <- forwardsolve(t(cholRtR), onesNTrain)
+        tmpRt2 <- forwardsolve(t(cholRtR), W)
         oneRtinvone <- sum(tmpRt^2)
         oneRtinvW <- sum(tmpRt * tmpRt2)
-
-        condmNum <- priorVec["muV.betaV"]/priorVec["muV.sig2"] +
-          oneRtinvW/allDraws[j, "sig2V"]
-        condmDenom <- 1/priorVec["muV.sig2"] + oneRtinvone/allDraws[j, "sig2V"]
-        condm <- condmNum/condmDenom # The conditional mean for muV
-        condv <- 1/condmDenom        # the conditional variamce for muV
-        allDraws[j, "muV"] <- rnorm(1, condm, sqrt(condv))
-        allAcceptances[j, "muV"] <- 1
-
 
         WMinusMuV <- log(allDraws[j, startsWith(colnames(allDraws), "V")]) -
           allDraws[j, "muV"]
         tmpWMinusMuV <- forwardsolve(t(cholRtR), WMinusMuV)
         WMinusMuVRtinvWMinusMuV <- sum(tmpWMinusMuV^2)
-        newAlpha <- priorVec["sig2V.alpha"] + nTrain/2
-        newBeta <- 1/(0.5 * WMinusMuVRtinvWMinusMuV + 1/priorVec["sig2V.beta"])
-        allDraws[j, "sig2V"] <- 1/rgamma(1, shape = newAlpha, scale = newBeta)
-        allAcceptances[j, "sig2V"] <- 1
-        K <- allDraws[j, "sig2V"] * getCorMat(x, allDraws[j, rhoVNames]) +
-          diag(epsV, nTrain)
-
-        rm(tmpRt, tmpRt2)
       }else{
-        stop("The covariance matrix for the variance process is ill-conditioned.
-               A possible solution (not necessarily a good solution) is to use less
-               data.")
+
+        W <- log(allDraws[j, startsWith(colnames(allDraws), "V")])
+        WMinusMuV <- W - allDraws[j, "muV"]
+
+        Rtinvone <- try(solve(Rt, onesNTrain), silent = TRUE)
+        if(is.numeric(Rtinvone)){
+          oneRtinvone <- sum(onesNTrain * Rtinvone)
+        }else{
+          svdRt <- svd(Rt)
+          oneRtinvone <- t(onesNTrain) %*% svdRt$v %*% diag(1/svdRt$d) %*%
+            t(svdRt$u) %*% onesNTrain
+        }
+
+        RtinvW <- try(solve(Rt, W, silent = TRUE))
+        if(is.numeric(RtinvW)){
+          oneRtinvW <- sum(onesNTrain * RtinvW)
+        }else{
+          svdRt <- svd(Rt)
+          oneRtinvW <- t(onesNTrain) %*% svdRt$v %*% diag(1/svdRt$d) %*%
+            t(svdRt$u) %*% W
+        }
+
+        RtinvWMinusMuV <- try(solve(Rt, WMinusMuV, silent = TRUE))
+        if(is.numeric(RtinvWMinusMuV)){
+          WMinusMuVRtinvWMinusMuV <- sum(WMinusMuV * RtinvWMinusMuV)
+        }else{
+          svdRt <- svd(Rt)
+          WMinusMuVRtinvWMinusMuV <- t(WMinusMuV) %*% svdRt$v %*% diag(1/svdRt$d) %*%
+            t(svdRt$u) %*% WMinusMuV
+        }
+
+
+
       }
+
+      condmNum <- priorVec["muV.betaV"]/priorVec["muV.sig2"] +
+        oneRtinvW/allDraws[j, "sig2V"]
+      condmDenom <- 1/priorVec["muV.sig2"] + oneRtinvone/allDraws[j, "sig2V"]
+      condm <- condmNum/condmDenom # The conditional mean for muV
+      condv <- 1/condmDenom        # the conditional variance for muV
+      allDraws[j, "muV"] <- rnorm(1, condm, sqrt(condv))
+      allAcceptances[j, "muV"] <- 1
+
+      newAlpha <- priorVec["sig2V.alpha"] + nTrain/2
+      newBeta <- 1/(0.5 * WMinusMuVRtinvWMinusMuV + 1/priorVec["sig2V.beta"])
+      allDraws[j, "sig2V"] <- 1/rgamma(1, shape = newAlpha, scale = newBeta)
+      allAcceptances[j, "sig2V"] <- 1
+      K <- allDraws[j, "sig2V"] * getCorMat(x, allDraws[j, rhoVNames]) +
+        diag(epsV, nTrain)
+
 
       ## Propose for rhoV, accept or reject in Metropolis step
       for(k in 1:d){
@@ -359,7 +402,15 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
             halfVar <- forwardsolve(t(RKWOut), KWBetween)
             propVar <- KWIn - t(halfVar) %*% halfVar
           }else{
-            propVar <- KWIn - t(KWBetween) %*% solve(KWOut, KWBetween)
+
+            KWOinvKWB <- try(solve(KWOut, KWBetween), silent = TRUE)
+            if(is.numeric(KWOinvKWB)){
+              propVar <- KWIn - t(KWBetween) %*% KWOinvKWB
+            }else{
+              svdKWO <- svd(KWOut)
+              propVar <- KWIn - t(KWBetween) %*% svdKWO$v %*% diag(1/svdKWO$d) %*%
+                t(svdKWO$u) %*% KWBetween
+            }
           }
 
           VP <- allDraws[j, startsWith(colnames(allDraws), "V")]

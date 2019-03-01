@@ -12,21 +12,23 @@ DSin <- function(x){
   return(y)
 }
 
-xTrain <- matrix(seq(0, 3, length.out = 15), ncol = 1)
+xTrain <- matrix(seq(0, 3, length.out = 25), ncol = 1)
 yTrain <- DSin(xTrain) + rnorm(length(xTrain), 0, 0.00)
 xPred <- matrix(sort(c(xTrain, seq(min(xTrain), max(xTrain), 0.005))), ncol = 1)
+chains <- 2
 
 noise <- FALSE
 priors <- createPriors(xTrain, noise = noise)
-inits <- createInits(xTrain, priors, chains = 1)
-chains <- 1
+inits <- createInits(xTrain, priors, chains = chains)
+
 
 system.time({
 fit <- bcgp(x = xTrain, y = yTrain, priors = priors,
-            inits = inits, numUpdates = 3, numAdapt = 1000,
-            burnin = 1000, nmcmc = 2000, chains = 1, cores = 1,
+            inits = inits, numUpdates = 3, numAdapt = 100,
+            burnin = 100, nmcmc = 200, chains = chains, cores = 1,
             noise = noise)
 })
 
 lapply(fit@sim$samples[[1]], mean)
 plot(xTrain, colMeans(fit@sim$samples[[1]]$V), type = 'l')
+lapply(fit@sim$acceptances[[1]], mean)

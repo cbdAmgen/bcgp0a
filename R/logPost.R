@@ -94,12 +94,12 @@ logPost <- function(x, y, params, priors, C, K){
   rhoVAlpha <- priors[startsWith(priorNames, "rhoV.alpha")]
   rhoVBeta <- priors[startsWith(priorNames, "rhoV.beta")]
 
-  like <- -0.5*logDet(C) - 0.5 * sum(tmpC^2) # = -.5*logDet(C) -
-  #   0.5 * t(yMinusMu) %*% solve(C) %*% yMinusMu
-  # This is the fastest way I've found
+  like <- -0.5*logDet(C) - 0.5 * tmpC2 # = -.5*logDet(C) -
+                                       #   0.5 * t(yMinusMu) %*% solve(C) %*% yMinusMu
+
 
   ## TODO: Check this and make sure the part for V is right.
-  ## Have I gotten the Jacobian right? Check line 73
+  ## Have I gotten the Jacobian right? Check line 110
   prior <- (priors["w.alpha"] - 1) * log(params["w"] - priors["w.lower"]) +
     (priors["w.beta"] - 1) * log(priors["w.upper"] - params["w"]) +
     sum((rhoLAlpha - 1) * log(rhoL)) + sum((rhoLBeta - 1) * log(rhoG - rhoL)) +
