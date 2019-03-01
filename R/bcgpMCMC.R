@@ -364,17 +364,14 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
       ## An attempt at adapting all the proposal widths at the same time
       if(j %% numAdapt == 0 && j < (numUpdates*numAdapt + 1)){
         acceptRate <- calAccept/numAdapt
-        # print(paste0('The most recent acceptance rates are ', round(acceptRate,4)))
-        # print(paste0('The old proposal widths are ', round(propWidths,4)))
         propWidths <- propWidths*acceptRate/0.33
-        # print(paste0('The new proposal widths are ', round(propWidths,4)))
         calAccept <- rep(0, length(propWidths))
         names(calAccept) <- names(propWidths)
       }
 
 
       ## Sample for sig2(x) (V)
-      if(nTrain >= 20){ # GET VALUES FOR SIG2X FOR "howManyClose" LOCATIONS AT A TIME
+      if(nTrain >= 20){ # GET VALUES FOR SIG2X FOR "nProp" LOCATIONS AT A TIME
         VC <- allDraws[j, startsWith(colnames(allDraws), "V")]
         for(k in seq_len(m)){
 
@@ -477,78 +474,6 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
           allAcceptances[j, startsWith(colnames(allDraws), "V")] <- 1
         }
       }
-
-      # %%% sample for sig2(x) %%%
-      #   if size(train.xt,1) >= 20 %%%%%% THIS BLOCK GETS VALUES FOR SIG2X AT
-      # %%%%%% TRAINING LOCATIONS "howManyClose" AT A
-      # %%%%%% TIME
-      #
-      # for k = 1:numPropose
-      #
-      # midPoint = unifrnd(0,1,1,d);
-      # distance = pdist2(train.xt,midPoint);
-      # [~,index] = getNElements(distance,howManyClose);
-      # idx = zeros(size(train.xt,1),1);
-      # idx(index) = 1;
-      #
-      # trainIn = train.xt(idx~=0,:);
-      # trainOut = train.xt(idx==0,:);
-      #
-      # muIdxW = log(VC(idx~=0));
-      #
-      # RIdxW = getGPredC(train.xt(idx~=0,:),rhoVC);
-      # RNoIdxW = getGPredC(train.xt(idx==0,:),rhoVC);
-      #
-      # RBetweenW = ones(sum(idx==0),sum(idx~=0));
-      # for j = 1:sum(idx==0),
-      # for h = 1:sum(idx~=0),
-      # for s = 1:size(train.xt,2)
-      # RBetweenW(j,h) = RBetweenW(j,h) * rhoVC(s).^(16*((trainOut(j,s)-trainIn(h,s))^2));
-      # end
-      # end
-      # end
-      #
-      # KIdxW = tau2*(RIdxW - RBetweenW'/(RNoIdxW + epsV*eye(size(RNoIdxW,1)))*RBetweenW) + epsV*eye(sum(idx~=0));
-      # wIdx = randnorm(1,muIdxW',[],KIdxW);
-      # vIdx = exp(wIdx);
-      # VP = VC;
-      # VP(idx~=0) = vIdx;
-      #
-      # RC = getRPred(wC,GC,LC);
-      # CP = getCPred(VP,RC,sig2epsC);
-      #
-      # t_f = log(unifrnd(0,1)) < forVPred(VP,VC,CP,CC,train,muC,muVC,KC);
-      # if t_f == 1
-      # draws.Vt(i,:) = VP;
-      # VC = VP;
-      # accept.V(i,idx~=0) = 1;
-      # else
-      #   draws.Vt(i,:) = VC;
-      # end
-      #
-      # end
-      #
-      # else %%% GET VALUES FOR SIG2X FOR THE ENTIRE VECTOR AT THE SAME TIME %%%
-      #
-      #   KW = tau2 * getGPredC(train.xt,rhoVC) + epsV*eye(size(CC,1));
-      # WP = mvnrnd(log(VC)',KW);
-      #   VP = exp(WP);
-      #
-      #   proposals.Vt(i,:) = VP;
-      #   RC = getRPred(wC,GC,LC);
-      #   CP = getCPred(VP,RC,sig2epsC);
-      #
-      #   t_f = log(unifrnd(0,1)) < forVPred(VP,VC,CP,CC,train,muC,muVC,KC);
-      #   if t_f == 1
-      #       draws.Vt(i,:) = VP';
-      #             else
-      #               draws.Vt(i,:) = VC;
-      #             accept.V(i) = 0;
-      #             end
-      #             end
-      #
-      #             end
-
 
     }
 
