@@ -234,7 +234,7 @@ x1 <- rep(1, n)
 x2 <- yTrain
 A <- C
 
-x1Ainvx2 <- function(x1, A, x2){
+x1Ainvx2blah <- function(x1, A, x2){
 
   cholAR <- try(chol(A), silent = TRUE)
   if(is.matrix(cholAR)){

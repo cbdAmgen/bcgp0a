@@ -249,57 +249,14 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
       oneRtinvone <- muVSig2VCalcs[1]
       oneRtinvW <- muVSig2VCalcs[2]
       WMinusMuVRtinvWMinusMuV <- muVSig2VCalcs[3]
-      # cholRtR <- try(chol(Rt), silent = TRUE)
-      # if(is.matrix(cholRtR)){
-      #   W <- log(allDraws[j, startsWith(colnames(allDraws), "V")])
-      #   tmpRt <- forwardsolve(t(cholRtR), onesNTrain)
-      #   tmpRt2 <- forwardsolve(t(cholRtR), W)
-      #   oneRtinvone <- sum(tmpRt^2)
-      #   oneRtinvW <- sum(tmpRt * tmpRt2)
-      #
-      #   WMinusMuV <- log(allDraws[j, startsWith(colnames(allDraws), "V")]) -
-      #     allDraws[j, "muV"]
-      #   tmpWMinusMuV <- forwardsolve(t(cholRtR), WMinusMuV)
-      #   WMinusMuVRtinvWMinusMuV <- sum(tmpWMinusMuV^2)
-      # }else{
-      #
-      #   W <- log(allDraws[j, startsWith(colnames(allDraws), "V")])
-      #   WMinusMuV <- W - allDraws[j, "muV"]
-      #
-      #   Rtinvone <- try(solve(Rt, onesNTrain), silent = TRUE)
-      #   if(is.numeric(Rtinvone)){
-      #     oneRtinvone <- sum(onesNTrain * Rtinvone)
-      #   }else{
-      #     svdRt <- svd(Rt)
-      #     oneRtinvone <- t(onesNTrain) %*% svdRt$v %*% diag(1/svdRt$d) %*%
-      #       t(svdRt$u) %*% onesNTrain
-      #   }
-      #
-      #   RtinvW <- try(solve(Rt, W, silent = TRUE))
-      #   if(is.numeric(RtinvW)){
-      #     oneRtinvW <- sum(onesNTrain * RtinvW)
-      #   }else{
-      #     svdRt <- svd(Rt)
-      #     oneRtinvW <- t(onesNTrain) %*% svdRt$v %*% diag(1/svdRt$d) %*%
-      #       t(svdRt$u) %*% W
-      #   }
-      #
-      #   RtinvWMinusMuV <- try(solve(Rt, WMinusMuV, silent = TRUE))
-      #   if(is.numeric(RtinvWMinusMuV)){
-      #     WMinusMuVRtinvWMinusMuV <- sum(WMinusMuV * RtinvWMinusMuV)
-      #   }else{
-      #     svdRt <- svd(Rt)
-      #     WMinusMuVRtinvWMinusMuV <- t(WMinusMuV) %*% svdRt$v %*% diag(1/svdRt$d) %*%
-      #       t(svdRt$u) %*% WMinusMuV
-      #   }
-      # }
 
-      condmNum <- priorVec["muV.betaV"]/priorVec["muV.sig2"] +
+
+      condMeanNum <- priorVec["muV.betaV"]/priorVec["muV.sig2"] +
         oneRtinvW/allDraws[j, "sig2V"]
-      condmDenom <- 1/priorVec["muV.sig2"] + oneRtinvone/allDraws[j, "sig2V"]
-      condm <- condmNum/condmDenom # The conditional mean for muV
-      condv <- 1/condmDenom        # the conditional variance for muV
-      allDraws[j, "muV"] <- rnorm(1, condm, sqrt(condv))
+      condMeanDenom <- 1/priorVec["muV.sig2"] + oneRtinvone/allDraws[j, "sig2V"]
+      condMean <- condMeanNum/condMeanDenom # The conditional mean for muV
+      condVar <- 1/condMeanDenom            # the conditional variance for muV
+      allDraws[j, "muV"] <- rnorm(1, condMean, sqrt(condVar))
       allAcceptances[j, "muV"] <- 1
 
       newAlpha <- priorVec["sig2V.alpha"] + nTrain/2
