@@ -38,4 +38,50 @@ checkValidCorMat <- function(x){
 
 }
 
+#' Create a correlation matrix.
+#'
+#' \code{x1Ainvx2} returns a list where each element is the result of multiplying
+#' a vector times a matrix inverse times another vector.
+#'
+#' This returns a list where each element is the result of \eqn{x_1^{\top}A^{-1}x_2}
+#'
+#' @param x1 A list of vectors of length \emph{n}. Generally, in the bcgp setting,
+#' \emph{n} will be the number of training data locations.
+#' @param A An \emph{n x n} matrix. In the \code{bcgp} setting, \emph{A} is a
+#' covariance matrix.
+#' @return x2 A list of vectors of length \emph{n}. Generally, in the bcgp setting,
+#' \emph{n} will be the number of training data locations.
+#' @examples
+#' n <- 10
+#' x <- matrix(sort(runif(n)), ncol = 1)
+#' A <- getCorMat(x, rho = 0.6)
+#' x1 <- list(rep(1, n), rep(1,n))
+#' x2 <- list(rep(1, n), MASS::mvrnorm(1, rep(0, n), A))
+#' x1Ainvx2(x1, A, x2)
+#' @export
+x1Ainvx2 <- function(x1, A, x2){
+
+  cholAR <- try(chol(A), silent = TRUE)
+  if(is.matrix(cholAR)){
+
+    tmp1 <- lapply(x1, forwardsolve, l = t(cholAR), k = ncol(cholAR))
+    tmp2 <- lapply(x2, forwardsolve, l = t(cholAR), k = ncol(cholAR))
+
+    xAinvy <- colSums(mapply(`*`, tmp1, tmp2))
+
+  }else{
+
+    Ainvy <- try(lapply(x2, solve, a = A), silent = TRUE)
+    if(all(sapply(Ainvy, is.numeric))){
+      xAinvy <- colSums(mapply(`*`, x1, Ainvy))
+    }else{
+      svdA <- svd(A)
+      middle <- svdA$v %*% diag(1/svdA$d) %*% t(svdA$u)
+      end <- lapply(x2, `%*%`, middle)
+      xAinvy <- colSums(mapply(`*`, x1, end))
+    }
+  }
+  return(xAinvy)
+}
+
 

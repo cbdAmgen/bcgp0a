@@ -201,3 +201,150 @@ exp(determinant(C)$modulus)
 logDet(C)
 
 yTrain <- MASS::mvrnorm(1, rep(beta0, length(xTrain)), C)
+
+
+#################################################################################
+
+rm(list = ls())
+cat("\014")
+
+n <- 10
+beta0 <- 0
+w <- 0.65
+rhoG <- 0.6
+rhoL <- 0.3
+sig2eps <- 0
+muV <- -0.1
+sig2V <- 0.01
+rhoV <- 0.99
+xTrain <- matrix(seq(0, 1, length.out = n), ncol = 1)
+noise <- FALSE
+
+G <- getCorMat(xTrain, rhoG)
+L <- getCorMat(xTrain, rhoL)
+R <- combineCorMats(w, G, L)
+K <- sig2V*getCorMat(xTrain, rhoV) + diag(1e-10, length(xTrain))
+# V <- exp(MASS::mvrnorm(1, rep(muV, length(xTrain)), K))
+V <- rep(1, length(xTrain))
+C <- getCovMat(V, R, sig2eps)
+yTrain <- MASS::mvrnorm(1, rep(beta0, length(xTrain)), C)
+
+
+x1 <- rep(1, n)
+x2 <- yTrain
+A <- C
+
+x1Ainvx2 <- function(x1, A, x2){
+
+  cholAR <- try(chol(A), silent = TRUE)
+  if(is.matrix(cholAR)){
+
+    tmp1 <- forwardsolve(t(cholAR), x1)
+    tmp2 <- forwardsolve(t(cholAR), x2)
+    xAinvy <- sum(tmp1 * tmp2)
+
+  }else{
+
+    Ainvy <- try(solve(A, x2), silent = TRUE)
+    if(is.numeric(Ainvy)){
+      xAinvy <- sum(x1 * Ainvy)
+    }else{
+      svdA <- svd(A)
+      xAinvy <- t(x1) %*% svdA$v %*% diag(1/svdA$d) %*%
+        t(svdA$u) %*% x2
+    }
+
+  }
+  return(xAinvy)
+}
+
+x1Ainvx2(x1, A, x1); t(x1) %*% solve(A) %*% x1
+x1Ainvx2(x1, A, x2); t(x1) %*% solve(A) %*% yTrain
+
+
+###############################
+x1 <- list(rep(1, n), rep(1,n))
+x2 <- list(rep(1, n), yTrain)
+A <- C
+
+x1Ainvx2Lists <- function(x1, A, x2){
+
+  cholAR <- try(chol(A), silent = TRUE)
+  if(is.matrix(cholAR)){
+
+    tmp1 <- lapply(x1, forwardsolve, l = t(cholAR))
+    tmp2 <- lapply(x2, forwardsolve, l = t(cholAR))
+
+    xAinvy <- colSums(mapply(`*`, tmp1, tmp2))
+
+  }else{
+
+    Ainvy <- try(lapply(x2, solve, a = A), silent = TRUE)
+    if(all(sapply(Ainvy, is.numeric))){
+      xAinvy <- colSums(mapply(`*`, x1, Ainvy))
+    }else{
+      svdA <- svd(A)
+      middle <- svdA$v %*% diag(1/svdA$d) %*% t(svdA$u)
+      end <- lapply(x2, `%*%`, middle)
+      xAinvy <- colSums(mapply(`*`, x1, end))
+    }
+  }
+  return(xAinvy)
+}
+
+x1Ainvx2Lists(x1, A, x2)
+
+
+
+# ## Sample for beta0. Gibbs step
+# cholCR <- try(chol(C), silent = TRUE)
+# if(is.matrix(cholCR)){
+#   tmpC <- forwardsolve(t(cholCR), rep(1, nTrain))
+#   tmpC2 <- forwardsolve(t(cholCR), y)
+#   oneCinvone <- sum(tmpC^2)
+#   oneCinvY <- sum(tmpC * tmpC2)
+# }else{
+#   Cinvone <- try(solve(C, onesNTrain), silent = TRUE)
+#   if(is.numeric(Cinvone)){
+#     oneCinvone <- sum(onesNTrain * Cinvone)
+#   }else{
+#     svdC <- svd(C)
+#     oneCinvone <- t(onesNTrain) %*% svdC$v %*% diag(1/svdC$d) %*%
+#       t(svdC$u) %*% onesNTrain
+#   }
+#   CinvY <- try(solve(C, y), silent = TRUE)
+#   if(is.numeric(CinvY)){
+#     oneCinvY <- sum(onesNTrain * CinvY)
+#   }else{
+#     svdC <- svd(C)
+#     oneCinvY <- t(onesNTrain) %*% svdC$v %*% diag(1/svdC$d) %*%
+#       t(svdC$u) %*% y
+#   }
+# }
+
+
+x1Ainvx2CBD <- function(x1, A, x2){
+
+  cholAR <- try(chol(A), silent = TRUE)
+  if(is.matrix(cholAR)){
+
+
+    tmp1 <- lapply(x1, forwardsolve, l = t(cholAR))
+    tmp2 <- lapply(x2, forwardsolve, l = t(cholAR))
+
+    xAinvy <- colSums(mapply(`*`, tmp1, tmp2))
+
+  }else{
+
+    Ainvy <- try(lapply(x2, solve, a = A), silent = TRUE)
+    if(all(sapply(Ainvy, is.numeric))){
+      xAinvy <- colSums(mapply(`*`, x1, Ainvy))
+    }else{
+      svdA <- svd(A)
+      middle <- svdA$v %*% diag(1/svdA$d) %*% t(svdA$u)
+      end <- lapply(x2, `%*%`, middle)
+      xAinvy <- colSums(mapply(`*`, x1, end))
+    }
+  }
+  return(xAinvy)
+}
