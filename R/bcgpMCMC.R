@@ -114,39 +114,9 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
                              x2 = list(onesNTrain, y))
       oneCinvone <- beta0Calcs[1]
       oneCinvY <- beta0Calcs[2]
-      # cholCR <- try(chol(C), silent = TRUE)
-      # if(is.matrix(cholCR)){
-      #   tmpC <- forwardsolve(t(cholCR), onesNTrain)
-      #   tmpC2 <- forwardsolve(t(cholCR), y)
-      #   oneCinvone <- sum(tmpC^2)
-      #   oneCinvY <- sum(tmpC * tmpC2)
-      # }else{
-      #   Cinvone <- try(solve(C, onesNTrain), silent = TRUE)
-      #   if(is.numeric(Cinvone)){
-      #     oneCinvone <- sum(onesNTrain * Cinvone)
-      #   }else{
-      #     svdC <- svd(C)
-      #     oneCinvone <- t(onesNTrain) %*% svdC$v %*% diag(1/svdC$d) %*%
-      #       t(svdC$u) %*% onesNTrain
-      #   }
-      #   CinvY <- try(solve(C, y), silent = TRUE)
-      #   if(is.numeric(CinvY)){
-      #     oneCinvY <- sum(onesNTrain * CinvY)
-      #   }else{
-      #     svdC <- svd(C)
-      #     oneCinvY <- t(onesNTrain) %*% svdC$v %*% diag(1/svdC$d) %*%
-      #       t(svdC$u) %*% y
-      #   }
-      # }
 
       allDraws[j, "beta0"] <- rnorm(1, oneCinvY/oneCinvone, sqrt(1/oneCinvone))
       allAcceptances[j, "beta0"] <- 1
-
-
-      #   stop("The covariance matrix is ill-conditioned. Possible solutions (not
-      #        necessarily good solutions) are to use less data or to set the priors
-      #        for 'sig2eps' in such a way that 'sig2eps' will be larger.")
-      # }
 
       ## Propose for w, accept or reject in Metropolis step
       wP <- allDraws[j, "w"] + runif(1, -propWidths["w"], propWidths["w"])
@@ -271,53 +241,58 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
 
       ## Sample for muV and sig2V (one-at-a-time). Gibbs steps
       Rt <- getCorMat(x, allDraws[j, rhoVNames]) + diag(epsV, nTrain)
-      cholRtR <- try(chol(Rt), silent = TRUE)
-      if(is.matrix(cholRtR)){
-        W <- log(allDraws[j, startsWith(colnames(allDraws), "V")])
-        tmpRt <- forwardsolve(t(cholRtR), onesNTrain)
-        tmpRt2 <- forwardsolve(t(cholRtR), W)
-        oneRtinvone <- sum(tmpRt^2)
-        oneRtinvW <- sum(tmpRt * tmpRt2)
-
-        WMinusMuV <- log(allDraws[j, startsWith(colnames(allDraws), "V")]) -
-          allDraws[j, "muV"]
-        tmpWMinusMuV <- forwardsolve(t(cholRtR), WMinusMuV)
-        WMinusMuVRtinvWMinusMuV <- sum(tmpWMinusMuV^2)
-      }else{
-
-        W <- log(allDraws[j, startsWith(colnames(allDraws), "V")])
-        WMinusMuV <- W - allDraws[j, "muV"]
-
-        Rtinvone <- try(solve(Rt, onesNTrain), silent = TRUE)
-        if(is.numeric(Rtinvone)){
-          oneRtinvone <- sum(onesNTrain * Rtinvone)
-        }else{
-          svdRt <- svd(Rt)
-          oneRtinvone <- t(onesNTrain) %*% svdRt$v %*% diag(1/svdRt$d) %*%
-            t(svdRt$u) %*% onesNTrain
-        }
-
-        RtinvW <- try(solve(Rt, W, silent = TRUE))
-        if(is.numeric(RtinvW)){
-          oneRtinvW <- sum(onesNTrain * RtinvW)
-        }else{
-          svdRt <- svd(Rt)
-          oneRtinvW <- t(onesNTrain) %*% svdRt$v %*% diag(1/svdRt$d) %*%
-            t(svdRt$u) %*% W
-        }
-
-        RtinvWMinusMuV <- try(solve(Rt, WMinusMuV, silent = TRUE))
-        if(is.numeric(RtinvWMinusMuV)){
-          WMinusMuVRtinvWMinusMuV <- sum(WMinusMuV * RtinvWMinusMuV)
-        }else{
-          svdRt <- svd(Rt)
-          WMinusMuVRtinvWMinusMuV <- t(WMinusMuV) %*% svdRt$v %*% diag(1/svdRt$d) %*%
-            t(svdRt$u) %*% WMinusMuV
-        }
-
-
-
-      }
+      W <- log(allDraws[j, startsWith(colnames(allDraws), "V")])
+      WMinusMuV <- W - allDraws[j, "muV"]
+      muVSig2VCalcs <- x1Ainvx2(x1 = list(onesNTrain, onesNTrain, WMinusMuV),
+                                A = Rt,
+                                x2 = list(onesNTrain, W, WMinusMuV))
+      oneRtinvone <- muVSig2VCalcs[1]
+      oneRtinvW <- muVSig2VCalcs[2]
+      WMinusMuVRtinvWMinusMuV <- muVSig2VCalcs[3]
+      # cholRtR <- try(chol(Rt), silent = TRUE)
+      # if(is.matrix(cholRtR)){
+      #   W <- log(allDraws[j, startsWith(colnames(allDraws), "V")])
+      #   tmpRt <- forwardsolve(t(cholRtR), onesNTrain)
+      #   tmpRt2 <- forwardsolve(t(cholRtR), W)
+      #   oneRtinvone <- sum(tmpRt^2)
+      #   oneRtinvW <- sum(tmpRt * tmpRt2)
+      #
+      #   WMinusMuV <- log(allDraws[j, startsWith(colnames(allDraws), "V")]) -
+      #     allDraws[j, "muV"]
+      #   tmpWMinusMuV <- forwardsolve(t(cholRtR), WMinusMuV)
+      #   WMinusMuVRtinvWMinusMuV <- sum(tmpWMinusMuV^2)
+      # }else{
+      #
+      #   W <- log(allDraws[j, startsWith(colnames(allDraws), "V")])
+      #   WMinusMuV <- W - allDraws[j, "muV"]
+      #
+      #   Rtinvone <- try(solve(Rt, onesNTrain), silent = TRUE)
+      #   if(is.numeric(Rtinvone)){
+      #     oneRtinvone <- sum(onesNTrain * Rtinvone)
+      #   }else{
+      #     svdRt <- svd(Rt)
+      #     oneRtinvone <- t(onesNTrain) %*% svdRt$v %*% diag(1/svdRt$d) %*%
+      #       t(svdRt$u) %*% onesNTrain
+      #   }
+      #
+      #   RtinvW <- try(solve(Rt, W, silent = TRUE))
+      #   if(is.numeric(RtinvW)){
+      #     oneRtinvW <- sum(onesNTrain * RtinvW)
+      #   }else{
+      #     svdRt <- svd(Rt)
+      #     oneRtinvW <- t(onesNTrain) %*% svdRt$v %*% diag(1/svdRt$d) %*%
+      #       t(svdRt$u) %*% W
+      #   }
+      #
+      #   RtinvWMinusMuV <- try(solve(Rt, WMinusMuV, silent = TRUE))
+      #   if(is.numeric(RtinvWMinusMuV)){
+      #     WMinusMuVRtinvWMinusMuV <- sum(WMinusMuV * RtinvWMinusMuV)
+      #   }else{
+      #     svdRt <- svd(Rt)
+      #     WMinusMuVRtinvWMinusMuV <- t(WMinusMuV) %*% svdRt$v %*% diag(1/svdRt$d) %*%
+      #       t(svdRt$u) %*% WMinusMuV
+      #   }
+      # }
 
       condmNum <- priorVec["muV.betaV"]/priorVec["muV.sig2"] +
         oneRtinvW/allDraws[j, "sig2V"]
