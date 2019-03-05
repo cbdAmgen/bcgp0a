@@ -63,6 +63,8 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
     m <- ceiling(nTrain/nProp) + 1 # Number of times to cycle through for V proposals
   }
 
+  onesNTrain <- rep(1, nTrain)
+
   ## TODO: Currently not parallelized. Need to make that happen
   for(i in seq_len(chains)){
 
@@ -92,7 +94,7 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
     calAccept <- rep(0, length(propWidths)) # container for acceptances
                                             # during prop width calibration
     names(calAccept) <- names(propWidths)
-    onesNTrain <- rep(1, nTrain)
+
 
     for(j in 2:iterations){
 
@@ -108,30 +110,34 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
       allDraws[j, ] = allDraws[j - 1, ]
 
       ## Sample for beta0. Gibbs step
-      cholCR <- try(chol(C), silent = TRUE)
-      if(is.matrix(cholCR)){
-        tmpC <- forwardsolve(t(cholCR), rep(1, nTrain))
-        tmpC2 <- forwardsolve(t(cholCR), y)
-        oneCinvone <- sum(tmpC^2)
-        oneCinvY <- sum(tmpC * tmpC2)
-      }else{
-        Cinvone <- try(solve(C, onesNTrain), silent = TRUE)
-        if(is.numeric(Cinvone)){
-          oneCinvone <- sum(onesNTrain * Cinvone)
-        }else{
-          svdC <- svd(C)
-          oneCinvone <- t(onesNTrain) %*% svdC$v %*% diag(1/svdC$d) %*%
-            t(svdC$u) %*% onesNTrain
-        }
-        CinvY <- try(solve(C, y), silent = TRUE)
-        if(is.numeric(CinvY)){
-          oneCinvY <- sum(onesNTrain * CinvY)
-        }else{
-          svdC <- svd(C)
-          oneCinvY <- t(onesNTrain) %*% svdC$v %*% diag(1/svdC$d) %*%
-            t(svdC$u) %*% y
-        }
-      }
+      beta0Calcs <- x1Ainvx2(x1 = list(onesNTrain, onesNTrain), A = C,
+                             x2 = list(onesNTrain, y))
+      oneCinvone <- beta0Calcs[1]
+      oneCinvY <- beta0Calcs[2]
+      # cholCR <- try(chol(C), silent = TRUE)
+      # if(is.matrix(cholCR)){
+      #   tmpC <- forwardsolve(t(cholCR), onesNTrain)
+      #   tmpC2 <- forwardsolve(t(cholCR), y)
+      #   oneCinvone <- sum(tmpC^2)
+      #   oneCinvY <- sum(tmpC * tmpC2)
+      # }else{
+      #   Cinvone <- try(solve(C, onesNTrain), silent = TRUE)
+      #   if(is.numeric(Cinvone)){
+      #     oneCinvone <- sum(onesNTrain * Cinvone)
+      #   }else{
+      #     svdC <- svd(C)
+      #     oneCinvone <- t(onesNTrain) %*% svdC$v %*% diag(1/svdC$d) %*%
+      #       t(svdC$u) %*% onesNTrain
+      #   }
+      #   CinvY <- try(solve(C, y), silent = TRUE)
+      #   if(is.numeric(CinvY)){
+      #     oneCinvY <- sum(onesNTrain * CinvY)
+      #   }else{
+      #     svdC <- svd(C)
+      #     oneCinvY <- t(onesNTrain) %*% svdC$v %*% diag(1/svdC$d) %*%
+      #       t(svdC$u) %*% y
+      #   }
+      # }
 
       allDraws[j, "beta0"] <- rnorm(1, oneCinvY/oneCinvone, sqrt(1/oneCinvone))
       allAcceptances[j, "beta0"] <- 1
