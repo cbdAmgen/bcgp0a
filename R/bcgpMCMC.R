@@ -80,6 +80,8 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
     colnames(allAcceptances) <- names(row1)
     allAcceptances[1, ] <- 1
 
+    logProb <- vector(mode = "numeric", length = iterations)
+
     if(d == 1){
       colnames(allDraws)[startsWith(colnames(allDraws), "rho")] <-
         paste0(colnames(allDraws)[startsWith(colnames(allDraws), "rho")],"1")
@@ -355,16 +357,22 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
           paramsP <- allDraws[j, ]
           paramsP[startsWith(colnames(allDraws), "V")] <- VP
 
-          accept <- acceptProposal(logCurr = logPost(x, y, params = allDraws[j, ],
-                                                     priorVec, C, K),
-                                   logProp = logPost(x, y, params = paramsP,
-                                                     priorVec, CP, K),
+          curr <- logPost(x, y, params = allDraws[j, ],
+                         priorVec, C, K)
+          prop <- logPost(x, y, params = paramsP,
+                         priorVec, CP, K)
+
+          accept <- acceptProposal(logCurr = curr,
+                                   logProp = prop,
                                    logCurrToProp = -sum(log(VP)),
                                    logPropToCurr = -sum(log(allDraws[j, startsWith(colnames(allDraws), "V")])))
 
           if(accept){
             allDraws[j, startsWith(colnames(allDraws), "V")] <- VP
             C <- CP
+            logProb[j] <- prop
+          }else{
+            logProb[j] <- curr
           }
 
         }
@@ -398,18 +406,23 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
         #        for 'sig2eps' in such a way that 'sig2eps' will be larger.")
         # }
 
-        accept <- acceptProposal(logCurr = logPost(x, y, params = allDraws[j, ],
-                                                   priorVec, C, K),
-                                 logProp = logPost(x, y, params = paramsP,
-                                                   priorVec, CP, K),
+        curr <- logPost(x, y, params = allDraws[j, ],
+                        priorVec, C, K)
+        prop <- logPost(x, y, params = paramsP,
+                        priorVec, CP, K)
+
+        accept <- acceptProposal(logCurr = curr,
+                                 logProp = prop,
                                  logCurrToProp = -sum(log(VP)),
                                  logPropToCurr = -sum(log(allDraws[j, startsWith(colnames(allDraws), "V")])))
-
 
         if(accept){
           allDraws[j, startsWith(colnames(allDraws), "V")] <- VP
           C <- CP
+          logProb[j] <- prop
           allAcceptances[j, startsWith(colnames(allDraws), "V")] <- 1
+        }else{
+          logProb[j] <- curr
         }
       }
 
@@ -420,10 +433,13 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
                                     !startsWith(colnames(allDraws), "V")]))
     warmup[[i]]$V <- allDraws[1:(numUpdates*numAdapt + burnin),
                                     startsWith(colnames(allDraws), "V")]
+    warmup[[i]]$lp__ <- logProb[1:(numUpdates*numAdapt + burnin)]
+
     samples[[i]] <- as.list(data.frame(allDraws[(iterations - nmcmc + 1):iterations,
                                                !startsWith(colnames(allDraws), "V")]))
     samples[[i]]$V <- allDraws[(iterations - nmcmc + 1):iterations,
                               startsWith(colnames(allDraws), "V")]
+    samples[[i]]$lp__ <- logProb[(iterations - nmcmc + 1):iterations]
 
     # warmup[[i]] <- as.list(data.frame(allDraws[1:(numUpdates*numAdapt + burnin), ]))
     # samples[[i]] <- as.list(data.frame(allDraws[(iterations - nmcmc + 1):iterations, ]))
@@ -432,7 +448,8 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
 
   }
 
-
+  params <- c("beta0", "w", "rhoG", "rhoL", "sig2eps", "V",
+              "muV", "rhoV", "sig2V", "lp__")
   sim <- list(samples = samples,
               warmup = warmup,
               acceptances = acceptances,
@@ -440,20 +457,21 @@ bcgpMCMC  <- function(x, y, priors, inits, numUpdates, numAdapt,
               numUpdates = numUpdates,
               numAdapt = numAdapt,
               burnin = burnin,
-              nmcmc = nmcmc)
+              nmcmc = nmcmc,
+              pars_oi = params)
 
   bfit <- new("bcgpfit",
-              model_pars = c("beta0", "w", "rhoG", "rhoL", "sig2eps", "sig2Y",
-                             "muV", "rhoV", "sig2V"),
+              model_pars = params,
               par_dims = list(beta0 = 1,
                               w = 1,
                               rhoG = d,
                               rhoL = d,
                               sig2eps = 1,
-                              sig2Y = nTrain,
+                              V = nTrain,
                               muV = 1,
                               rhoV = d,
-                              sig2V = 1),
+                              sig2V = 1,
+                              lp__ = 1),
               sim = sim,
               priors = priors,
               inits = inits,
